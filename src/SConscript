@@ -1,0 +1,14 @@
+Import('env')
+import os
+import SCutils
+import SCons.Util
+
+
+
+print os.getcwd()
+
+env.CXXFile(target='Robots_flex.cc',source='robots.ll')
+robots_flex = env.Object('Robots_flex.cc')
+
+
+env['crawler'] = env.Program('crawler', SCons.Util.flatten([env['sources'], robots_flex]))
