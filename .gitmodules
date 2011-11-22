@@ -1,0 +1,6 @@
+[submodule "3rd_party/c-ares"]
+	path = 3rd_party/c-ares
+	url = git://github.com/bagder/c-ares.git
+[submodule "3rd_party/curl"]
+	path = 3rd_party/curl
+	url = git://github.com/bagder/curl.git
