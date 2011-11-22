@@ -208,7 +208,7 @@ bool Url::valid_host() const throw(boost::regex_error) {
 	return false;
 }
 
-bool Url::valid_host(const string& h) throw(boost::regex_error) {
+bool Url::valid_host(const std::string& h) throw(boost::regex_error) {
 	if( h.empty() )
 		return true;
 	regex re;
