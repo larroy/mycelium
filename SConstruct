@@ -157,11 +157,11 @@ libs = [
 
 
 if not SCutils.has_option('system_curl'):
-    curl_static = File('../3rd_party/curl_install/lib/libcurl.a')
-    ares_static = File('../3rd_party/c-ares_install/lib/libcares.a')
+    curl_static = File('3rd_party/curl_install/lib/libcurl.a')
+    ares_static = File('3rd_party/c-ares_install/lib/libcares.a')
     libs.append(ares_static)
     libs.append(curl_static)
-    includes.append('../3rd_party/curl_install/include/')
+    includes.append('3rd_party/curl_install/include/')
 
 
 # Add the previous settings to the build environment
