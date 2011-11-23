@@ -14,7 +14,28 @@ otherwise DNS resolving inside curl will block the program.
 How to use it
 -------------
 
-- Compile the sources with SCons
+- Initialize the git submodules:
+
+$ git submodule init
+$ git submodule update
+
+
+- Build the 3rd-party libraries:
+
+$ ./build.py
+
+- Compile the sources with SCons:
+
+$ scons
+
+- Alternatively you might build with system curl:
+
+$  scons --system_curl
+
+- But as said previously, synchronous DNS resolving will harm the performance
+  and block. So it's  not recommended unless curl has been compiled with
+  c-ares, as it will be done by build.py
+
 - Then execute the crawler binary and pipe urls to the crawler.fifo fifo.
 
 - The results are stored in the disk via the 'bighash' utility. The urls are
@@ -28,7 +49,7 @@ Example / Screenshots:
 Start the crawler:
 
 <pre>
-piotr@gomasio:130:~/devel/mycelium$ build/release/crawler 
+piotr@gomasio:130:~/devel/mycelium$ build/release/crawler
 log4cxx: Large window sizes are not allowed.
 2011-11-23 00:43:14,481 - INFO  crawlog - Initializing system...
 down: 0.00 iB 0.00 KB/s

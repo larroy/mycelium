@@ -24,6 +24,7 @@ SCutils.add_option('define', "Additional define", 1)
 SCutils.add_option('assert', "enable assertions", 0)
 SCutils.add_option('glibcxx_debug', "enable glibcxx debug", 0)
 SCutils.add_option('gprof_profile', "compile with profiling support", 0)
+SCutils.add_option('system_curl', "use system's curl", 0)
 
 # Auto -j
 if not SCutils.has_option('noauto_j'):
@@ -112,6 +113,9 @@ env = Environment(
 
 env.Decider('MD5-timestamp')
 
+
+############################################################################
+# Flex builder
 flex_bld = env.Builder(action=bld_lex, suffix='.ll', src_suffix='.ll');
 env.Append(BUILDERS={'Flex':flex_bld})
 env.Append(LEXFLAGS=['-Cf'])
@@ -151,21 +155,26 @@ libs = [
     'ssl'
 ]
 
-# Add the previous data to the build environment
+
+if not SCutils.has_option('system_curl'):
+    curl_static = File('../3rd_party/curl_install/lib/libcurl.a')
+    ares_static = File('../3rd_party/c-ares_install/lib/libcares.a')
+    libs.append(ares_static)
+    libs.append(curl_static)
+    includes.append('../3rd_party/curl_install/include/')
+
+
+# Add the previous settings to the build environment
+
 env.Append(CPPPATH=includes)
 env.Append(LIBS=libs)
 env.Append(LIBPATH=[Dir('lib')])
 env.ParseConfig('pkg-config liblog4cxx --cflags --libs');
 
-
 ############################################################################
 # Get the sources and store them in the environment
 
-
 #VariantDir('build', '.')
-
-
-############################################################################
 
 env['sources'] = SCutils.get_sources('src/sources.txt')
 
