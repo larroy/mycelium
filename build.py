@@ -36,7 +36,11 @@ def main():
     print STAGE
     os.chdir('3rd_party/c-ares/')
     xsystem(['./buildconf'])
-    xsystem(['./configure', '--enable-debug','--prefix={0}'.format(os.path.join(old_dir, '3rd_party','c-ares_install')) ])
+    xsystem(['./configure',
+        '--enable-debug',
+        '--enable-nonblocking',
+        '--prefix={0}'.format(os.path.join(old_dir, '3rd_party','c-ares_install'))
+    ])
     xsystem(['make', '-j{0}'.format(NPROCS)])
     xsystem(['make', 'install'])
     os.chdir(old_dir)
@@ -45,7 +49,14 @@ def main():
     print STAGE
     os.chdir('3rd_party/curl/')
     xsystem(['./buildconf'])
-    xsystem(['./configure', '--enable-debug', '--enable-ares={0}'.format(os.path.join(old_dir, '3rd_party','c-ares_install')), '--prefix={0}'.format(os.path.join(old_dir, '3rd_party', 'curl_install')), '--disable-ldap', '--without-libssh2', '--without-librtmp' ])
+    xsystem(['./configure',
+        '--disable-ldap',
+        '--without-libssh2',
+        '--without-librtmp',
+        '--enable-debug',
+        '--enable-ares={0}'.format(os.path.join(old_dir, '3rd_party','c-ares_install')),
+        '--prefix={0}'.format(os.path.join(old_dir, '3rd_party', 'curl_install')),
+    ])
     xsystem(['make', '-j{0}'.format(NPROCS)])
     xsystem(['make', 'install'])
     os.chdir(old_dir)
