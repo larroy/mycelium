@@ -48,28 +48,28 @@ gzstreambuf* gzstreambuf::open( const char* name, int open_mode) {
     mode = open_mode;
     // no append nor read/write mode
     char  fmode[10];
-	memset(fmode,0,10);
+    memset(fmode,0,10);
 //    char* fmodeptr = fmode;
 
-//	bool testb = mode & std::ios_base::binary;
-	bool testi = mode & std::ios_base::in;
-	bool testo = mode & std::ios_base::out;
-	bool testt = mode & std::ios_base::trunc;
-	bool testa = mode & std::ios_base::app;
+//    bool testb = mode & std::ios_base::binary;
+    bool testi = mode & std::ios_base::in;
+    bool testo = mode & std::ios_base::out;
+    bool testt = mode & std::ios_base::trunc;
+    bool testa = mode & std::ios_base::app;
 
-	if (!testi && testo && !testt && !testa)
-		strcpy(fmode, "w");
-	if (!testi && testo && !testt && testa)
-		strcpy(fmode, "a");
-	if (!testi && testo && testt && !testa)
-		strcpy(fmode, "w");
-	if (testi && !testo && !testt && !testa)
-		strcpy(fmode, "r");
+    if (!testi && testo && !testt && !testa)
+        strcpy(fmode, "w");
+    if (!testi && testo && !testt && testa)
+        strcpy(fmode, "a");
+    if (!testi && testo && testt && !testa)
+        strcpy(fmode, "w");
+    if (testi && !testo && !testt && !testa)
+        strcpy(fmode, "r");
 
-	if (strlen(fmode) == 0)
-		return (gzstreambuf*)0;
+    if (strlen(fmode) == 0)
+        return (gzstreambuf*)0;
 
-	strcat(fmode, "b");
+    strcat(fmode, "b");
 
 //    if ((mode & std::ios::ate) || (mode & std::ios::app)
 //        || ((mode & std::ios::in) && (mode & std::ios::out)))

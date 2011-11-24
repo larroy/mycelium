@@ -50,9 +50,9 @@ namespace torrent {
 // of the implementation is visible.
 
 class bencode_error : public std::runtime_error {
-	public:
-		bencode_error(const std::string& reason) : std::runtime_error(reason) { }
-		bencode_error() : std::runtime_error("unspecified") { }
+    public:
+        bencode_error(const std::string& reason) : std::runtime_error(reason) { }
+        bencode_error() : std::runtime_error("unspecified") { }
 };
 
 

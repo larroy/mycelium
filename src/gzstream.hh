@@ -46,8 +46,8 @@ namespace GZSTREAM_NAMESPACE {
 
 class gzstreambuf : public std::streambuf {
 private:
-	gzstreambuf(const gzstreambuf&);
-	gzstreambuf& operator=(const gzstreambuf&);
+    gzstreambuf(const gzstreambuf&);
+    gzstreambuf& operator=(const gzstreambuf&);
 
     static const int bufferSize = 47+256;    // size of data buff
     // totals 512 bytes under g++ for igzstream at the end.
