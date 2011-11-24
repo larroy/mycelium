@@ -7,7 +7,7 @@
  */
 
 /**
- * @addtogroup Big_hash 
+ * @addtogroup Big_hash
  * @brief Persistent hash-like data structure and associated filesystem path
  * @version 0.3
  * @author Pedro Larroy Tovar
@@ -22,7 +22,7 @@
  * big_hash_bucket b("/tmp/bh","omg");
  * @endcode
  * A big hash bucket at root directory /tmp/bh is created with key "omg"
- * Now there's a lock on this bucket and additional files can be stored in b.bucket_dir() path. Also a string of data can be associated with this key by calling b.set("somedata"), just like an associative container. 
+ * Now there's a lock on this bucket and additional files can be stored in b.bucket_dir() path. Also a string of data can be associated with this key by calling b.set("somedata"), just like an associative container.
  *
  * @{
  */
@@ -39,7 +39,7 @@
 #define VALUE_FNAME "__value__"
 
 /// maximum number of buckets to create with same hash in case of collision
-#define MAXBUCKETS 3 
+#define MAXBUCKETS 3
 
 namespace big_hash {
 
@@ -75,7 +75,7 @@ public:
 	~big_hash_bucket();
 
     /// @return key of this bucket
-	std::string key() const; 
+	std::string key() const;
 
     /// write value ("data") of this bucket to disk
 	void set(const std::string& value);
@@ -103,13 +103,13 @@ public:
     void erase();
 
 
-private:	
+private:
     big_hash_bucket(const big_hash_bucket&);
     const big_hash_bucket& operator=(const big_hash_bucket&);
 	void write_key();
 	void get_lockfile(const char* f);
 
-	std::string m_lock_file;	
+	std::string m_lock_file;
 	int	m_lockfd;
 	std::string m_key;
 	std::string m_value;
@@ -119,7 +119,7 @@ private:
 };
 
 
-inline std::string big_hash_bucket::key() const 
+inline std::string big_hash_bucket::key() const
 {
     if ( erased )
 		throw std::runtime_error("big_hash_bucket::key: bucket has been erased");

@@ -56,15 +56,15 @@ bool Robots::path_allowed(const std::string& user_agent, const std::string& p) c
                     if(r->str.compare(0,r->str.size(),path) == 0) {
                         if(r->type == ALLOW)
                             return true;
-                        else    
+                        else
                             return false;
-                    }        
+                    }
                 }
                 return true;
             }
         }
     }
-    return true;    
+    return true;
 }
 
 void Robots::rules()
@@ -78,7 +78,7 @@ void Robots::reading_uas()
         uas_rules_all.push_back(current);
         current.clear();
         valid = true;
-    }    
+    }
     state = READING_UAS;
 }
 
@@ -118,12 +118,12 @@ int main(int argc, char* argv[])
     cout << "*****************" << endl;
     if(argc<3)
         exit(EXIT_SUCCESS);
-    string ua = argv[1];        
+    string ua = argv[1];
     for(int i = 2; i < argc; ++i) {
         string path = argv[i];
-        if( robots.path_allowed(ua,path) ) 
+        if( robots.path_allowed(ua,path) )
             cout << "allow path: " << path << endl;
-        else    
+        else
             cout << "disallow path: " << path << endl;
     }
 

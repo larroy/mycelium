@@ -7,7 +7,7 @@
  */
 
 /**
- * @addtogroup utils 
+ * @addtogroup utils
  * @brief misc util functions
  * @{
  */
@@ -60,7 +60,7 @@ namespace utils {
     /// execute program redirecting stdout to os
 	int stdout2stream_system_exec(std::ostream& os, const char* cmd, ...);
     /// handler for system call errors, currently throws std::runtime_error
-	int err_sys(std::string s); 
+	int err_sys(std::string s);
 
     /// recursively create the specified path
 	void create_directories(const char *path);
@@ -132,7 +132,7 @@ class Semaphore {
 				std::ostringstream os;
 				os << "sem_init error: " << std::strerror(errno);
 				throw std::runtime_error("sem_init error");
-			}	
+			}
 		}
 		~Semaphore() throw(std::runtime_error) {
 			if(sem_destroy(&sem) == -1) {
@@ -141,23 +141,23 @@ class Semaphore {
 				std::cerr << os.str() << std::endl;
 				abort();
 //				throw std::runtime_error(os.str());
-			}	
+			}
 		}
 
 		void wait() throw(std::runtime_error) {
 //			DLOG(std::cout << "wait" << std::endl;)
-			if (sem_wait(&sem) == -1)	
+			if (sem_wait(&sem) == -1)
 				throw std::runtime_error("sem_wait error");
 		}
 
 		int trywait() throw(AgainEx,std::runtime_error) {
 			int		rc;
 			if ( (rc = sem_trywait(&sem)) == -1) {
-				if(errno == EAGAIN) 
+				if(errno == EAGAIN)
 					throw AgainEx("sem_trywait can't wait without blocking");
-				else 	
+				else
 					throw std::runtime_error(("sem_trywait error"));
-			}		
+			}
 			return(rc);
 		}
 
@@ -165,21 +165,21 @@ class Semaphore {
 //			DLOG(std::cout << "post" << std::endl;)
 			if (sem_post(&sem) == -1)
 				throw std::runtime_error("sem_post error");
-		}	
+		}
 
 		void timedwait(const struct timespec *abs_timeout) throw(TimeOutEx,std::runtime_error) {
 			if(sem_timedwait(&sem,abs_timeout) == -1) {
 				if(errno == ETIMEDOUT)
 					throw TimeOutEx("sem_timedwait timeout");
-				else	
+				else
 					throw std::runtime_error("sem_timedwait error");
-			}	
+			}
 		}
 		int getvalue() throw(std::runtime_error) {
 			int val;
 			if( sem_getvalue(&sem,&val) == -1)
 				throw std::runtime_error("sem_getvalue error");
-			return(val);	
+			return(val);
 		}
 
 	private:
@@ -189,7 +189,7 @@ class Semaphore {
 
 /**
  * @class CircQueue
- * @brief Circular Queue implemented with posix semaphores 
+ * @brief Circular Queue implemented with posix semaphores
  */
 template<class T> class CircQueue {
     public:
@@ -295,7 +295,7 @@ template<class T> class CircQueue {
 		 * True if the queue has no elements, false otherwise
 		 */
 		bool empty() { return (nstored.getvalue() == 0); }
-	
+
 
     private:
 		Semaphore mutex;
@@ -310,7 +310,7 @@ template<class T> class CircQueue {
 
 /**
  * from network order (msb first) Big endian
- * @param b pointer to buffer to read from. 
+ * @param b pointer to buffer to read from.
  */
 template<typename T>T int_read(const void* b) {
 	const unsigned char * p = (const unsigned char*) b; // prevent signed arithmetic
@@ -325,7 +325,7 @@ template<typename T>T int_read(const void* b) {
 
 /**
  * to network order (msb first) Big endian
- * @param b  pointer to buffer to write value. from b[0] to b[sizeof(T)-1] will get written 
+ * @param b  pointer to buffer to write value. from b[0] to b[sizeof(T)-1] will get written
  * it's not safe to use this function for unsigned types
  */
 template<typename T>void int_put(void* b, T t) {
@@ -349,7 +349,7 @@ template<typename T>void int_put(void* b, T t) {
     /// Convert an hexadecimal digit to number between 0 and 15
 	inline char xdigit_to_num(char) throw(std::logic_error);
 
-    /// Convert a number from 0 to 15 to hex in uppercase 
+    /// Convert a number from 0 to 15 to hex in uppercase
 	inline char digit_to_xnum(char) throw(std::logic_error);
 
     /// Set flag in flags
@@ -370,7 +370,7 @@ template<typename T>void int_put(void* b, T t) {
 		UTF32LE,
 		UTF32BE
 	};
-    
+
     /**
      * Check for BOM
      * @return string with unicode type or NULL
@@ -521,7 +521,7 @@ template<typename T>void int_put(void* b, T t) {
     }
 
     inline char digit_to_xnum(char c) throw(std::logic_error) {
-        if( c >= 0 && c <= 15 )  
+        if( c >= 0 && c <= 15 )
             return ("0123456789ABCDEF"[(int)c]);
         else
             throw std::logic_error("digit outside [0,15] range");

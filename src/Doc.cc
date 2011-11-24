@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Pedro Larroy Tovar 
+ * Copyright 2007 Pedro Larroy Tovar
  *
  * This file is subject to the terms and conditions
  * defined in file 'LICENSE.txt', which is part of this source
@@ -27,7 +27,7 @@ const char* get_dbdir()
 	const char* res=0;
 	if ( (res = getenv("DB_DIR")) )
 		return res;
-	else	
+	else
 		return DB_DIR;
 }
 
@@ -51,11 +51,11 @@ void Doc::open_content()
 	content_fd = open(contents.string().c_str(), O_RDWR | O_CREAT | O_TRUNC, 00644);
 	if( content_fd < 0 )
 		utils::err_sys("open_content failure");
-	content_gz_f = gzdopen(content_fd, "w+b");	
+	content_gz_f = gzdopen(content_fd, "w+b");
 	if( content_gz_f == NULL ) {
 		int err;
 		utils::err_sys(fs("gzdopen failed: "<< gzerror(content_gz_f,&err) ));
-	}	
+	}
 	content_sz = 0;
 }
 
@@ -72,7 +72,7 @@ void Doc::unlink_content()
     /*********************/
 	path contents(hash_bucket->bucket_dir());
 	contents /= CONTENTSFNAME;
-    
+
     close_content();
     if( unlink(contents.string().c_str()) < 0)
         utils::err_sys("unlink");
@@ -84,13 +84,13 @@ void Doc::close_content()
 		if ( gzclose(content_gz_f) != Z_OK )
 		    utils::err_sys("gzclose");
 		content_gz_f = NULL;
-	}	
+	}
     if(content_fd != -1) {
         // gzclose will have closed this
         // close(content_fd);
         content_fd = -1;
     }
-}	
+}
 
 #if 0
 void Doc::write_headers()
@@ -103,7 +103,7 @@ void Doc::write_headers()
 	if( ! os.good() )
 		utils::err_sys("bad ogzstream");
 
-	os << headers;	
+	os << headers;
 	os.close();
 }
 #endif
@@ -147,16 +147,16 @@ void Doc::save()
 	if( ! charset.empty() )
 		map.insert_key("charset", charset);
 
-	if( ! title.empty() )	
+	if( ! title.empty() )
 		map.insert_key("title", title);
 
-	if( ! rss2.empty() )	
+	if( ! rss2.empty() )
 		map.insert_key("rss2", rss2);
 
-	if( ! rss.empty() )	
+	if( ! rss.empty() )
 		map.insert_key("rss", rss);
 
-	if( ! atom.empty() )	
+	if( ! atom.empty() )
 		map.insert_key("atom", atom);
 
 	if( curl_code != 0 ) {
@@ -212,8 +212,8 @@ bool Doc::load_url(const Url& _url)
 		rss.clear();
 		atom.clear();
 		return false;
-	}	
-		
+	}
+
 	istringstream is(value);
 
 	try {
@@ -222,47 +222,47 @@ bool Doc::load_url(const Url& _url)
 	//	is.close();
 		if( b.has_key("url") )
 			url = b["url"].as_string();
-	
-		if( b.has_key("http") )	
+
+		if( b.has_key("http") )
 			http_code = b["http"].as_value();
 
-		if( b.has_key("modified") )	
+		if( b.has_key("modified") )
 			modified = b["modified"].as_value();
 
-		if( b.has_key("crawled") )	
+		if( b.has_key("crawled") )
 			crawled = b["crawled"].as_value();
 
-		if( b.has_key("content_sz") )	
+		if( b.has_key("content_sz") )
 			content_sz = b["content_sz"].as_value();
 
-		if( b.has_key("headers") )	
+		if( b.has_key("headers") )
 			headers = b["headers"].as_string();
 
-		if( b.has_key("etag") )	
+		if( b.has_key("etag") )
 			etag = b["etag"].as_string();
 
-		if( b.has_key("charset") )	
+		if( b.has_key("charset") )
 			charset = b["charset"].as_string();
 
-		if( b.has_key("curl_code") )	
+		if( b.has_key("curl_code") )
 			curl_code = b["curl_code"].as_value();
 
-		if( b.has_key("curl_error") )	
+		if( b.has_key("curl_error") )
 			curl_error = b["curl_error"].as_string();
 
-		if( b.has_key("flags") )	
+		if( b.has_key("flags") )
 			flags = b["flags"].as_value();
 
-		if( b.has_key("title") )	
+		if( b.has_key("title") )
 			title = b["title"].as_string();
 
-		if( b.has_key("rss2") )	
+		if( b.has_key("rss2") )
 			rss2 = b["rss2"].as_string();
 
-		if( b.has_key("rss") )	
+		if( b.has_key("rss") )
 			rss = b["rss"].as_string();
 
-		if( b.has_key("atom") )	
+		if( b.has_key("atom") )
 			atom = b["atom"].as_string();
 
 	} catch (std::ios_base::failure& e){
@@ -298,28 +298,28 @@ void Doc::load_leaf(const std::string& leaf)
 		if( b.has_key("url") )
 			url = b["url"].as_string();
 
-		if( b.has_key("http") )	
+		if( b.has_key("http") )
 			http_code = b["http"].as_value();
 
-		if( b.has_key("modified") )	
+		if( b.has_key("modified") )
 			modified = b["modified"].as_value();
 
-		if( b.has_key("content_sz") )	
+		if( b.has_key("content_sz") )
 			content_sz = b["content_sz"].as_value();
 
-		if( b.has_key("headers") )	
+		if( b.has_key("headers") )
 			headers = b["headers"].as_string();
 
-		if( b.has_key("charset") )	
+		if( b.has_key("charset") )
 			charset = b["charset"].as_string();
 
-		if( b.has_key("curl_code") )	
+		if( b.has_key("curl_code") )
 			curl_code = b["curl_code"].as_value();
 
-		if( b.has_key("curl_error") )	
+		if( b.has_key("curl_error") )
 			curl_error = b["curl_error"].as_string();
 
-		if( b.has_key("flags") )	
+		if( b.has_key("flags") )
 			flags = b["flags"].as_value();
 	} catch (std::ios_base::failure& e){
 		cerr << __FUNCTION__ << " exception: " << e.what() << endl;
@@ -331,7 +331,7 @@ void Doc::lock()
 {
     if ( locked() )
         unlock();
-    url.normalize(); 
+    url.normalize();
     hash_bucket.reset(new big_hash_bucket(get_dbdir(), url.get()));
 }
 

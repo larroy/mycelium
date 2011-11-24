@@ -7,7 +7,7 @@
  */
 
 /**
- * @addtogroup crawler 
+ * @addtogroup crawler
  * @brief utilities for robots.txt files
  *
  * Detailed information about robots.txt format: norobots-rfc.txt
@@ -15,8 +15,8 @@
  * @{
  */
 
-#ifndef    robots_hh 
-#define    robots_hh 
+#ifndef    robots_hh
+#define    robots_hh
 #include <vector>
 #include <string>
 #include <iostream>
@@ -37,7 +37,7 @@ namespace robots {
     } robots_state_t;
 
     /**
-     * @brief Tests if path is allowed by robots.txt 
+     * @brief Tests if path is allowed by robots.txt
      *
      * Parses a robots.txt file and sets up internal machinery for easy testing if an url is allowed.
      * To evaluate if access to a URL is allowed.  A robot must attempt to match
@@ -56,7 +56,7 @@ namespace robots {
         Robots(std::istream* in);
 
         /**
-         * @brief parse supplied robots.txt content 
+         * @brief parse supplied robots.txt content
          * @return 0 if there was success parsing the file or -1 if the syntax is invalid, nonfatal errors would be stored on errors but the parser will keep going and might return 0
          */
         virtual int yylex();
@@ -95,15 +95,15 @@ namespace robots {
         bool path_allowed(const std::string& user_agent, const std::string& path) const;
 
         bool valid;
-        void clear() { 
+        void clear() {
             current.clear();
-            uas_rules_all.clear(); 
+            uas_rules_all.clear();
             state = START;
-        }    
+        }
         /// parsing errors
         std::string    errors;
 
-    protected:    
+    protected:
         // currently unused
         void reset(std::istream* in);
 
@@ -116,9 +116,9 @@ namespace robots {
 
         /// Rule for a user agent, @sa rule_type_t
         struct Rule {
-            Rule() : type(DISALLOW), str() {}    
-            Rule(rule_type_t type, const std::string& s) : type(type), str(s) {}    
-            rule_type_t type;    
+            Rule() : type(DISALLOW), str() {}
+            Rule(rule_type_t type, const std::string& s) : type(type), str(s) {}
+            rule_type_t type;
 
             /// Text of the rule, for DISALLOW / ALLOW is a path
             std::string str;
@@ -133,7 +133,7 @@ namespace robots {
             STATE_EOF,
         } state_t;
 
-        // state changers 
+        // state changers
         void start() { state=START; }
         void reading_uas();
         void rules();
@@ -147,7 +147,7 @@ namespace robots {
             Uas_rules() :
                 ua(),
                 rules()
-            {}    
+            {}
             void clear() { ua.clear(); rules.clear(); }
             bool empty() { return ua.empty(); }
             std::vector<std::string> ua;
@@ -158,8 +158,8 @@ namespace robots {
         state_t state;
         Uas_rules current;
         std::vector<Uas_rules> uas_rules_all;
-        
-        
+
+
         /// Sometimes we get html, this checks for html tags to avoid further parsing and wasting time
         static boost::regex sgml_tag;
 
@@ -171,25 +171,25 @@ namespace robots {
      * @brief Extends Robots so we have state and which host it belongs
      */
     struct Robots_entry : public Robots {
-        Robots_entry(const std::string& host, std::istream* in) : 
+        Robots_entry(const std::string& host, std::istream* in) :
             Robots(in),
             state(EMPTY),
             host(host)
         {}
 
-        Robots_entry(const std::string& host) : 
+        Robots_entry(const std::string& host) :
             Robots(),
             state(EMPTY),
             host(host)
         {}
 
-        Robots_entry(const std::string& host,robots_state_t state) : 
+        Robots_entry(const std::string& host,robots_state_t state) :
             Robots(),
             state(state),
             host(host)
         {}
 
-        Robots_entry() : 
+        Robots_entry() :
             Robots(),
             state(EMPTY),
             host()

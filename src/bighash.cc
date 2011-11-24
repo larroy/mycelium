@@ -23,7 +23,7 @@
 #include <cstring>  // strerror
 
 #define DEFAULT_MASK    00644
-#define LOCK_EXT ".lock" 
+#define LOCK_EXT ".lock"
 
 /// Formatted string, allows to use stream operators and returns a std::string with the resulting format
 #define fs(a) \
@@ -79,13 +79,13 @@ static void create_directories(const char *path)
         slash = strchr(slash+1, '/');
         if( slash != NULL )
             len = slash - path;
-        else    
+        else
             len = strlen(path);
         buf.assign(path,len);
         res = mkdir(buf.c_str(), 00775);
         if( res != 0 && errno != EEXIST)
             err_sys(fs("mkdir \"" << buf << "\""));
-        if(!slash)    
+        if(!slash)
             break;
     }
 }
@@ -96,7 +96,7 @@ static int err_sys(std::string s) {
     char *err_str = std::strerror(errno);
     if( err_str )
         err = s + " error: " + std::strerror(errno)  + "\n";
-    else    
+    else
         err = s + " error: unknown (strerror returned NULL)\n";
     throw std::runtime_error(err);
 }
@@ -122,7 +122,7 @@ big_hash_bucket::big_hash_bucket(const char* root_dir, const std::string& key) :
         clog << fs(__FUNCTION__ << " Warning: empty key") << endl;
 
     int res;
-    
+
     SHA_CTX c;
     SHA1_Init(&c);
     SHA1_Update(&c, key.c_str(), key.size());
@@ -151,22 +151,22 @@ big_hash_bucket::big_hash_bucket(const char* root_dir, const std::string& key) :
                 if( buck_key == key ) {
                     m_bucket_dir.assign(buckdir.string());
                     return;
-                } else 
+                } else
                     // Hash collision (unlikely) or corrupt data (likely)
                     unlock();
                     continue;
             } else {
-                // we couldn't read key, use bucket 
+                // we couldn't read key, use bucket
                 m_bucket_dir.assign(buckdir.string());
                 write_key();
                 return;
             }
-        } else if ( errno == ENOENT ) { 
+        } else if ( errno == ENOENT ) {
             create_directories(buckdir.string().c_str());
             m_bucket_dir.assign(buckdir.string());
             write_key();
             return;
-        } else 
+        } else
             throw std::runtime_error(fs("can't access: "<< buckdir.string()));
     }
     throw std::runtime_error("out of buckets");
@@ -198,17 +198,17 @@ big_hash_bucket::big_hash_bucket(const char* bucket, bool block) :
 
     lock();
     //get_lockfile(m_lock_file.c_str());
-    
+
     if ( read_key(buckdir.string(), m_key))
         throw runtime_error(fs("can't read key: "<<buckdir.string()));
-        
+
 }
 
 void big_hash_bucket::lock()
 {
     if( ! m_lock_file.empty() )
         get_lockfile(m_lock_file.c_str());
-    else    
+    else
         throw runtime_error("Empty m_lock_file");
 }
 
@@ -218,13 +218,13 @@ void big_hash_bucket::unlock()
         //if(close(m_lockfd))
         //    err_sys("close");
         close(m_lockfd);
-        m_lockfd = -1;    
-    }        
+        m_lockfd = -1;
+    }
     if(! m_lock_file.empty()) {
         if(unlink(m_lock_file.c_str()))
             err_sys("unlink");
-        m_lock_file.clear();    
-    }        
+        m_lock_file.clear();
+    }
 }
 
 void big_hash_bucket::erase()
@@ -263,7 +263,7 @@ std::string big_hash_bucket::get()
     }
 
 
-#define BSIZE 8192    
+#define BSIZE 8192
     char buf[BSIZE];
     ssize_t nread=0;
     while( (nread=read(valuefd, buf, BSIZE)) > 0 ) {
@@ -288,7 +288,7 @@ int read_key(const std::string& bucket_dir, std::string& key)
     int keyfd = open(keyf.string().c_str(), O_RDWR);
     if( keyfd < 0 )
         return -1;
-#define BSIZE 1024        
+#define BSIZE 1024
     char buf[BSIZE];
     ssize_t nread=0;
     while( (nread=read(keyfd, buf, BSIZE)) > 0 ) {
@@ -297,7 +297,7 @@ int read_key(const std::string& bucket_dir, std::string& key)
 #undef BSIZE
     if (nread < 0)
         result = -1;
-    else    
+    else
         result = 0;
     close(keyfd);
     return result;
@@ -317,7 +317,7 @@ void big_hash_bucket::get_lockfile(const char* f)
             if ( m_lockfd < 0 )
                 err_sys("open");
 
-            char buf[64]; 
+            char buf[64];
             memset(buf, 0, 64);
             if ( read(m_lockfd, buf, 63) <= 0 ) {
                 clog << "lockfile w/o pid: " << f << " reusing..." << endl;
@@ -348,16 +348,16 @@ void big_hash_bucket::get_lockfile(const char* f)
             struct timespec ts;
             memset(&ts, 0, sizeof(timespec));
             ts.tv_sec = 1;
-            //int ret = sleep(1);    
+            //int ret = sleep(1);
             if ( nanosleep(&ts, 0) )
                 err_sys("nanosleep");
-                
+
             continue;
 
-        } else if( m_lockfd < 0 && errno != EEXIST)    
+        } else if( m_lockfd < 0 && errno != EEXIST)
             err_sys(f);
 
-        else {     
+        else {
             write_pid(m_lockfd);
             break;
         }
@@ -378,12 +378,12 @@ void big_hash_bucket::write_key()
     int keyfd = open(keyf.string().c_str(), O_WRONLY | O_TRUNC | O_CREAT, DEFAULT_MASK);
     if( keyfd < 0 )
         err_sys("open");
-    const char* b=0;    
-    const char* e=0;    
+    const char* b=0;
+    const char* e=0;
     ssize_t nwrite=0;
     b = m_key.c_str();
     e = m_key.c_str() + m_key.size();
-#define BSIZE 8192    
+#define BSIZE 8192
     while( e>b && (nwrite=write(keyfd, b, e-b>BSIZE ? BSIZE : e-b)) > 0 )
         b += nwrite;
 #undef BSIZE
@@ -407,15 +407,15 @@ void big_hash_bucket::set(const std::string& value)
     int valuefd = open(valuef.string().c_str(), O_WRONLY | O_TRUNC | O_CREAT, DEFAULT_MASK);
     if( valuefd < 0 )
         throw runtime_error(fs(__FUNCTION__ << ": open"));
-    const char* b=0;    
-    const char* e=0;    
+    const char* b=0;
+    const char* e=0;
     ssize_t nwrite=0;
     b = value.c_str();
     e = value.c_str() + value.size();
-#define BSIZE 8192    
+#define BSIZE 8192
     while( e>b && (nwrite=write(valuefd, b, e-b>BSIZE ? BSIZE : e-b)) > 0 )
         b += nwrite;
-#undef BSIZE        
+#undef BSIZE
     if (nwrite < 0) {
         //result = -1;
         bfs::remove(valuef);
@@ -431,10 +431,10 @@ static bool running_pid(pid_t pid)
     bool found = false;
     static const char * const dir = "/proc";
     DIR* procdir = opendir(dir);
-    if ( ! procdir ) 
+    if ( ! procdir )
         err_sys("opendir proc");
 
-    const struct dirent * ent = 0; 
+    const struct dirent * ent = 0;
     pid_t curpid = 0;
     while ( (ent = readdir(procdir)) ) {
         if ( ent->d_name[0] > 0 && ent->d_name[0] <= '9' ) {
@@ -452,7 +452,7 @@ static bool running_pid(pid_t pid)
 
 static void write_pid(int fd)
 {
-    char buf[64]; 
+    char buf[64];
     memset(buf, 0, 64);
     int res;
     if ( lseek(fd, 0, SEEK_SET) != 0 )
@@ -491,7 +491,7 @@ BOOST_PYTHON_MODULE_INIT(bighash)
         .def("unlock", &big_hash_bucket::unlock, "unlock")
         .def("bucket_dir", &big_hash_bucket::bucket_dir, "the directory for this bucket")
         .def("erase", &big_hash_bucket::erase, "erase this bucket, don't use any other function afterwards")
-    ;    
+    ;
     register_exception_translator<key_error>(key_error_translator);
 }
 #endif

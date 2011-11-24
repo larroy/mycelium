@@ -1,6 +1,6 @@
 %{
 /*
- * Copyright 2007 Pedro Larroy Tovar 
+ * Copyright 2007 Pedro Larroy Tovar
  *
  * This file is subject to the terms and conditions
  * defined in file 'LICENSE.txt', which is part of this source
@@ -26,7 +26,7 @@ using namespace robots;
 not_special		[^()<>@,;:\\"/\[\]?={} \t#\n\r]
 SPACE [\t ]
 NEWLINE	\r?\n
-COMMENT	#	
+COMMENT	#
 COMMENTL {SPACE}*{COMMENT}.*
 %%
 <*>{COMMENTL}({NEWLINE})* {
@@ -120,7 +120,7 @@ COMMENTL {SPACE}*{COMMENT}.*
 		//yyterminate();
 		return -1;
 	}
-	
+
 //	if (state == START && *yytext == '<') {
 //		cout << "looks like html" << endl;
 //	//	yyterminate();

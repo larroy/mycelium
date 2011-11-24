@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Pedro Larroy Tovar 
+ * Copyright 2007 Pedro Larroy Tovar
  *
  * This file is subject to the terms and conditions
  * defined in file 'LICENSE.txt', which is part of this source
@@ -7,7 +7,7 @@
  */
 
 /**
- * @addtogroup crawler 
+ * @addtogroup crawler
  * @{
  * @brief utility for retrieving documents via http
  * @details Uses libevent and asynchronous IO
@@ -51,10 +51,10 @@
 /// Number of concurrent retrievals to run
 #define NUMHANDLES 20
 /// Bytes/s
-#define LOW_SPEED_LIMIT 1024 
+#define LOW_SPEED_LIMIT 1024
 /// Seconds for the conn to be below LOW_SPEED_LIMIT
 #define LOW_SPEED_TIME 60
-/// 
+///
 #define CONNECTTIMEOUT 60
 #define MAXREDIRS 5
 
@@ -128,7 +128,7 @@ public:
         easy = curl_easy_init();
         if( ! easy )
             err_sys("curl_easy_init failed");
-        if( ! g )    
+        if( ! g )
             err_sys("GlobalInfo is NULL");
     }
 
@@ -140,7 +140,7 @@ public:
             headers = 0;
         }
         if (doc && doc->is_open_content()) {
-            try { 
+            try {
                 doc->unlink_content();
             } catch(runtime_error& e) {
                 LOG4CXX_ERROR(crawlog,fs("Easy_handle::~Easy_handle() exception: " << e.what()));
@@ -192,7 +192,7 @@ private:
     void operator=(const GlobalInfo&);
 
 public:
-    GlobalInfo() : 
+    GlobalInfo() :
         fifo_buff(),
         interactive_buff(),
         //multi(curl_multi_init())
@@ -220,7 +220,7 @@ public:
 
         easy_handles.reserve(NUMHANDLES);
         for(size_t i=0; i<NUMHANDLES; ++i)
-            easy_handles.push_back(new Easy_handle(this,i));    
+            easy_handles.push_back(new Easy_handle(this,i));
 
         init_fifo(this);
         evtimer_set(&timer_event, timer_cb, this);
@@ -241,7 +241,7 @@ public:
     ~GlobalInfo()
     {
         for(size_t i=0; i<NUMHANDLES; ++i)
-            delete easy_handles[i];    
+            delete easy_handles[i];
 
         curl_multi_cleanup(multi);
     }
@@ -322,7 +322,7 @@ void Easy_handle::done(CURLcode result)
         LOG4CXX_WARN(crawlog,fs("handle id: " << id << " DONE: "
             << eff_url << " HTTP " << doc->http_code
             << " curl_code: " << result << " (" << curl_error << ")"));
-        try { 
+        try {
             doc->unlink_content();
         } catch(runtime_error& e) {
             LOG4CXX_ERROR(crawlog,fs("Easy_handle::done() exception: " << e.what()));
@@ -333,13 +333,13 @@ void Easy_handle::done(CURLcode result)
         case IDLE:
             throw runtime_error("done called on IDLE handle");
             break;
-        
+
         case ROBOTS:
             // try to parse robots contents
             // TODO: store it on a file
             if( doc->http_code == 200 && result == CURLE_OK && ! doc->content.empty() ) {
                 try {
-                    istringstream robots_is(doc->content);    
+                    istringstream robots_is(doc->content);
                     robots_entry.reset(new robots::Robots_entry(doc->url.host(),&robots_is));
                     int res = robots_entry->yylex();
                     if( res < 0 ) {
@@ -383,7 +383,7 @@ void Easy_handle::done(CURLcode result)
     reschedule();
 }
 
-    
+
 
 void Easy_handle::get_content(const Url& url)
 {
@@ -423,7 +423,7 @@ void Easy_handle::get_content(const Url& url)
 
 
     // Refresh only
-    if ( preexisting ) { 
+    if ( preexisting ) {
         if (! doc->etag.empty()) {
             if (headers) {
                 curl_slist_free_all(headers);
@@ -439,7 +439,7 @@ void Easy_handle::get_content(const Url& url)
             my_curl_easy_setopt(easy, CURLOPT_TIMECONDITION, CURL_TIMECOND_IFMODSINCE);
             my_curl_easy_setopt(easy, CURLOPT_TIMEVALUE, doc->modified);
         }
-    } 
+    }
 
     CURLMcode rc = curl_multi_add_handle(global->multi, easy);
     mcode_or_die("get_content: curl_multi_add_handle", rc);
@@ -459,12 +459,12 @@ void Easy_handle::reschedule()
     //curl_easy_cleanup(easy);
     //easy = curl_easy_init();
     curl_easy_reset(easy);
-    
+
     Url url = global->classifier.peek(id);
     //LOG4CXX_DEBUG(crawlog,fs("peek("<<id<<"): " << url.get()));
     //url.normalize_host();
     url.normalize();
-    if( ! robots_entry 
+    if( ! robots_entry
         || url.host() != robots_entry->host
         || robots_entry->state == robots::EMPTY ) {
 
@@ -505,7 +505,7 @@ void Easy_handle::reschedule()
         rc = curl_multi_add_handle(global->multi, easy);
         mcode_or_die("reschedule: curl_multi_add_handle", rc);
 
-    } else if( robots_entry->state == robots::NOT_AVAILABLE 
+    } else if( robots_entry->state == robots::NOT_AVAILABLE
         || robots_entry->state == robots::EPARSE ) {
 
         global->classifier.pop(id);
@@ -539,7 +539,7 @@ void Easy_handle::reschedule()
                 LOG4CXX_DEBUG(crawlog,fs("handle id: " << id << ", url: " << url.get() << " not allowed (robots.txt)"));
             }
         }
-    } else {        
+    } else {
         throw runtime_error("unknown state in reschedule");
     }
 
@@ -714,7 +714,7 @@ void GlobalInfo::check_run_count ()
             }
             if (easy) {
                 curl_easy_getinfo (easy, CURLINFO_PRIVATE, &handle);
-                if( ! handle ) 
+                if( ! handle )
                     throw runtime_error("NULL handle retrieved from CURLINFO_PRIVATE");
 
                 curl_multi_remove_handle (multi, easy);
@@ -767,7 +767,7 @@ static void timer_cb (int fd, short kind, void *userp)
             CURL_SOCKET_TIMEOUT, 0, &g->still_running);
     } while (rc == CURLM_CALL_MULTI_PERFORM);
     mcode_or_die ("timer_cb: curl_multi_socket_action", rc);
-    
+
     LOG4CXX_DEBUG(crawlog,fs("timer_cb: still_running: " << g->still_running));
     g->check_run_count ();
 }
@@ -841,9 +841,9 @@ int sock_cb (CURL * e, curl_socket_t s, int what, void *cbp, void *sockp)
 static size_t robots_write_cb (void *ptr, size_t size, size_t nmemb, void *data)
 {
     Easy_handle *handle = (Easy_handle *) data;
-    if( ! handle ) 
+    if( ! handle )
         throw runtime_error("null WRITEDATA on robots_write_cb");
-    
+
     size_t realsize = size * nmemb;
 
     handle->dl_bytes += realsize;
@@ -857,7 +857,7 @@ static size_t robots_write_cb (void *ptr, size_t size, size_t nmemb, void *data)
 static size_t header_write_cb (void *ptr, size_t size, size_t nmemb, void *data)
 {
     Easy_handle *handle = (Easy_handle *) data;
-    if( ! handle ) 
+    if( ! handle )
         throw runtime_error("null data on write_cb");
     size_t realsize = size * nmemb;
 
@@ -872,11 +872,11 @@ static size_t header_write_cb (void *ptr, size_t size, size_t nmemb, void *data)
 static size_t content_write_cb (void *ptr, size_t size, size_t nmemb, void *data)
 {
     Easy_handle *handle = (Easy_handle *) data;
-    if( ! handle ) 
+    if( ! handle )
         throw runtime_error("null WRITEDATA on write_cb");
-    
+
     size_t realsize = size * nmemb;
-    if( ! realsize ) 
+    if( ! realsize )
         return realsize;
 
     handle->dl_bytes += realsize;
@@ -885,7 +885,7 @@ static size_t content_write_cb (void *ptr, size_t size, size_t nmemb, void *data
 
     int cnt = gzwrite(handle->doc->content_gz_f, ptr, realsize);
     if( cnt == 0 ) {
-        err_sys(fs("gzwrite error: " << gzerror(handle->doc->content_gz_f, NULL)));     
+        err_sys(fs("gzwrite error: " << gzerror(handle->doc->content_gz_f, NULL)));
         return 0;
     } else if(cnt>0) {
         handle->doc->content_sz += cnt;
@@ -904,7 +904,7 @@ static int prog_cb (void *p, double dltotal, double dlnow, double ult, double ul
 
     double dl_diff = dlnow - handle->prev_dl_cnt;
     handle->prev_dl_cnt = dlnow;
-    if( dl_diff < 0 ) 
+    if( dl_diff < 0 )
         dl_diff = dlnow;
     timer timediff = timer::current() - handle->prev_dl_time;
     handle->dl_kBs = (dl_diff / static_cast<double>(timediff.usec())) * 1000;
@@ -926,7 +926,7 @@ static void fifo_cb(int fd, short event, void *arg)
         //new_conn
         g->process_fifo_buff(true);
     } else if (cnt < 0) {
-        err_sys("fifo read error");      
+        err_sys("fifo read error");
     } else {
         g->fifo_buff.append(b,cnt);
         g->process_fifo_buff();
@@ -937,7 +937,7 @@ void GlobalInfo::process_fifo_buff(bool flush)
 {
     if( fifo_buff.empty() )
         return;
-    
+
     size_t tortoise=0;
     size_t hare=0;
     while( (hare=fifo_buff.find_first_of("\n\r", tortoise)) != string::npos ) {
@@ -951,8 +951,8 @@ void GlobalInfo::process_fifo_buff(bool flush)
                 // TODO only accept http scheme
                 if( url.absolute() && url.scheme() == "http" )
                     classifier.push(url);
-                else    
-                    LOG4CXX_WARN(crawlog,fs("non-http scheme, ignoring " << url.to_string() << endl)); 
+                else
+                    LOG4CXX_WARN(crawlog,fs("non-http scheme, ignoring " << url.to_string() << endl));
 
             } catch(UrlParseError& e) {
                 LOG4CXX_ERROR(crawlog,fs("url parse error: " << line << " : " << e.what() ));
@@ -981,7 +981,7 @@ void GlobalInfo::process_fifo_buff(bool flush)
     } else {
         fifo_buff.clear();
     }
-    
+
 //    typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
 //    boost::char_separator<char> nl_cr("\n\r");
 //    tokenizer tokens(g->fifo_buff, nl_cr);
@@ -1027,7 +1027,7 @@ void GlobalInfo::interactive_process(bool flush)
 {
     if( interactive_buff.empty() )
         return;
-    
+
     size_t tortoise=0;
     size_t hare=0;
     while( (hare=interactive_buff.find_first_of("\n\r", tortoise)) != string::npos ) {
@@ -1058,7 +1058,7 @@ void GlobalInfo::status()
             cout << "handle " << (*i)->id << ": " << statestr[(*i)->state] << ": " << format_timediff(timediff) << ": " << (*i)->dl_kBs << " k: " << (*i)->doc->url.to_string() << endl;
         else
             cout << "handle " << (*i)->id << ": " << statestr[(*i)->state] << ": " << "NULL" << endl;
-            
+
     }
 }
 
@@ -1068,8 +1068,8 @@ void GlobalInfo::interactive_cmd(const std::string& cmd)
         cout << "Top q len: " << classifier.q_len_top() << endl;
         for(size_t i=0; i<NUMHANDLES; ++i)
             cout << "q("<<i<<") len: " << classifier.q_len(i) << endl;
-        cout << endl;    
-    } else if (cmd == "dumpq") {    
+        cout << endl;
+    } else if (cmd == "dumpq") {
         cout << classifier << endl;
     } else if (cmd == "quit") {
         throw std::runtime_error("quit (interactive)");
@@ -1124,7 +1124,7 @@ int main(int argc, char **argv)
 
         LOG4CXX_INFO(crawlog,fs("Initializing system..."));
         LOG4CXX_DEBUG(crawlog,fs("debug info enabled"));
-    
+
         if (signal(SIGINT, sigint_handler) == SIG_ERR)
             err_sys("signal");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Pedro Larroy Tovar 
+ * Copyright 2007 Pedro Larroy Tovar
  *
  * This file is subject to the terms and conditions
  * defined in file 'LICENSE.txt', which is part of this source
@@ -13,7 +13,7 @@ using namespace std;
 void Path::merge(const Path& p)
 {
 	D(cout << "Path::merge " << this->get() << " with " << p.get() << endl;);
-	if( p.flags.test(SLASH_BEGIN) ) 
+	if( p.flags.test(SLASH_BEGIN) )
 		(*this) = p;
 	else {
 		if( ! flags.test(SLASH_END) && ! segmt.empty() && ! p.empty() )
@@ -25,7 +25,7 @@ void Path::merge(const Path& p)
 				if( ! segmt.empty() ) {
 					segmt.pop_back();
 					flags.set(SLASH_END,true);
-				}	
+				}
 			} else {
 				segmt.push_back(*i);
 				flags.set(SLASH_END,false);
@@ -34,7 +34,7 @@ void Path::merge(const Path& p)
 		if( p.flags.test(SLASH_END) )
 			flags.set(SLASH_END,true);
 	//  Fix: When you merge with .. or . the path should end in slash
-	//	else	 
+	//	else
 	//		flags.set(SLASH_END,false);
 	}
 	D(cout << "result: " << this->get() << endl;)
@@ -50,27 +50,27 @@ void Path::normalize()
 	list<string>::iterator k = segmt.begin();
 	++i;
 	while( i != segmt.end() ) {
-		if( *i == ".." && j != i && *j != ".." && *j != "." ) { 
+		if( *i == ".." && j != i && *j != ".." && *j != "." ) {
 			segmt.erase(j);
 			i=segmt.erase(i);
 
 
 			if( i == segmt.end() )
 				flags.set(SLASH_END,true);
-				
+
 		} else if ( *i == "." ) {
 			i=segmt.erase(i);
 			if( i == segmt.end() )
 				flags.set(SLASH_END,true);
 		} else {
 			++j;
-			++i;	
+			++i;
 		}
 		j=k=segmt.begin();
 		while(k != i)
 			j=k++;
 
-	}	
+	}
 }
 
 size_t Path::size() const
@@ -100,7 +100,7 @@ size_t Path::size() const
 
 string Path::get() const
 {
-	if( empty() ) 
+	if( empty() )
 		return "";
 	string result;
 	result.reserve(this->size());
@@ -113,18 +113,18 @@ string Path::get() const
 			result += (*j);
 			result += '/';
 			iterated=true;
-		}	
+		}
 		if(iterated && ! result.empty() )
 			result = result.substr(0,result.size()-1); // remove final '/', since there's no + operator in list iterators
 
 		if(flags.test(SLASH_END))
 			result += '/';
-		
+
 		if(result == "//") // just to make sure
 			result = "/";
 	} else if (flags.test(SLASH_BEGIN) || flags.test(SLASH_END)){
 		result = "/";
-	} else 		
+	} else
 		result.clear();
 
 	return result;
@@ -142,7 +142,7 @@ void Path::assign(const string& s)
 		flags.set(SLASH_BEGIN,true);
 		++end;
 		begin = end;
-	}	
+	}
 
 	while(1) {
 		if( end == s.end() ) {
@@ -170,10 +170,10 @@ void Path::assign(const string& s)
 		if( depth >= segmt.max_size() ) {
 			clog << "path depth >= MAXDEPTH" << endl;
 			return;
-		}	
+		}
 	}
 	if( s.at(s.size()-1) == '/' )
-		flags.set(SLASH_END,true); 
+		flags.set(SLASH_END,true);
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Pedro Larroy Tovar 
+ * Copyright 2007 Pedro Larroy Tovar
  *
  * This file is subject to the terms and conditions
  * defined in file 'LICENSE.txt', which is part of this source
@@ -18,7 +18,7 @@ using namespace Url_util;
 static const char* scheme_defport[] = {
 	"80",
 	"21",
-	"0" 
+	"0"
 };
 
 static const boost::regex url_re(url_regex[RE_URL],regex_constants::perl);
@@ -98,7 +98,7 @@ void Url::assign(const string& s) throw(UrlParseError) {
 		PATH	= 5,
 		QUERY	= 6,
 		FRAGMENT = 7
-	};	
+	};
 
 	try {
 		//regex re(url_regex[RE_URL],regex_constants::perl);
@@ -116,16 +116,16 @@ void Url::assign(const string& s) throw(UrlParseError) {
 
 			if( match[DSLASH_AUTH].matched ) {
 				// Only valid for locally scoped urls like file:/// that define a default host, since http:/// makes no sense, authority must exists for globally scoped urls
-				// in this case 3: // 4 matches, but its empty 
+				// in this case 3: // 4 matches, but its empty
 				// if url == "/////" then 3: // 4 matches but empty 5: /// we treat this like an absolute path, but only if there's no scheme.
-				if( match[DSLASH_AUTH].str() == "//") { 
+				if( match[DSLASH_AUTH].str() == "//") {
 					// if( scheme().empty() )
 					// this is a relative uri with an absolute path we are ok.
-					if ( ! scheme().empty() && scheme() != "file" ) 
+					if ( ! scheme().empty() && scheme() != "file" )
 						throw UrlParseError("empty authority part, with // is not allowed for schemes other than 'file'");
 				}
 			}
-			
+
 			if( match[AUTHORITY].matched )
 				authority(match[AUTHORITY].str());
 			if( match[PATH].matched )
@@ -152,32 +152,32 @@ void Url::assign(const string& s) throw(UrlParseError) {
 		s+=re.what();
 		throw UrlParseError(s);
 
-	} catch(UrlParseError e) {	
+	} catch(UrlParseError e) {
 		throw;
 	} catch(...) {
 		throw UrlParseError("Url::assign() throwed an unknown exception");
 	}
-}	
+}
 
 bool Url::syntax_ok() const  {
 	string s;
-	if( has_authority() ) 
+	if( has_authority() )
 		if( ! ( _path.empty() || _path.absolute() ) )
 			return false;
-	
-	if( scheme().find_first_of(":/?#") != string::npos ) 
+
+	if( scheme().find_first_of(":/?#") != string::npos )
 		return false;
-	
-	if( host().find_first_of("/?#") != string::npos ) 
+
+	if( host().find_first_of("/?#") != string::npos )
 		return false;
-	
+
 	if( ! valid_host())
 		return false;
-	
-	if( path().find_first_of("?#") != string::npos ) 
+
+	if( path().find_first_of("?#") != string::npos )
 		return false;
-	
-	if( query().find_first_of("#") != string::npos ) 
+
+	if( query().find_first_of("#") != string::npos )
 		return false;
 
 	return true;
@@ -190,13 +190,13 @@ bool Url::valid_host() const throw(boost::regex_error) {
 
 	string h = unescape_safe(host());
 	re.assign(url_regex[RE_HOST]);
-	if( regex_match(h,re) ) 
+	if( regex_match(h,re) )
 		return true;
 
 	re.assign(url_regex[RE_IPVFUT]);
-	if( regex_match(h,re) ) 
+	if( regex_match(h,re) )
 		return true;
-	
+
 	re.assign(url_regex[RE_IPV6]);
 	if( regex_match(h,re) )
 		return true;
@@ -215,13 +215,13 @@ bool Url::valid_host(const std::string& h) throw(boost::regex_error) {
 	string host = unescape_safe(h);
 
 	re.assign(url_regex[RE_HOST]);
-	if( regex_match(host,re) ) 
+	if( regex_match(host,re) )
 		return true;
 
 	re.assign(url_regex[RE_IPVFUT]);
-	if( regex_match(host,re) ) 
+	if( regex_match(host,re) )
 		return true;
-	
+
 	re.assign(url_regex[RE_IPV6]);
 	if( regex_match(host,re) )
 		return true;
@@ -246,15 +246,15 @@ Url& Url::merge_ref(const Url& u) throw(BadUrl) {
 			// SCHEME
 			this->scheme(u.scheme());
 			// AUTHORITY
-			if( u.has_authority() ) 
+			if( u.has_authority() )
 				this->authority(u.authority());
 			// PATH
 			this->path(u.path());
 			// QUERY
 			this->query(u.query());
 //			if( u.has_query() )
-//				this->query(u.query());	
-//			else 
+//				this->query(u.query());
+//			else
 //				this->clear_query();
 			// FRAGMENT
 		} else {
@@ -263,31 +263,31 @@ Url& Url::merge_ref(const Url& u) throw(BadUrl) {
 				this->path(u.path());
 				// QUERY
 				if( u.has_query() )
-					this->query(u.query());	
-				//else 
+					this->query(u.query());
+				//else
 				//	this->clear_query();
 			} else {
 				if( u._path.empty() ) {
 					if( u.has_query() )
-						this->query(u.query());	
+						this->query(u.query());
 				} else {
 					this->_path.merge(u._path); // magic lies here
 					if( u.has_query() )
-						this->query(u.query());	
-					else 
+						this->query(u.query());
+					else
 						this->clear_query();
 				}
 
 				// FRAGMENT
 				if( u.has_fragment() )
-					this->fragment(u.fragment());	
-				else 
+					this->fragment(u.fragment());
+				else
 					this->clear_fragment();
 			}
-		}	
+		}
 		if( u.has_fragment() )
-			this->fragment(u.fragment());	
-		else 
+			this->fragment(u.fragment());
+		else
 			this->clear_fragment();
 
 	} else if ( ! this->absolute() && u.absolute() ) {
@@ -295,12 +295,12 @@ Url& Url::merge_ref(const Url& u) throw(BadUrl) {
 	} else if ( this->absolute() && u.absolute() ) {
 		throw runtime_error("Can't merge two absolute urls");
 	} else if ( ! this->absolute() && ! u.absolute() ) {
-		throw runtime_error("Can't merge two relative references"); 
+		throw runtime_error("Can't merge two relative references");
 	} else {
 		throw logic_error("Url::merge_ref");
 	}
-	
-	return *this;			
+
+	return *this;
 }
 
 Url& Url::operator+=(const Url& u) throw(BadUrl) {
@@ -312,7 +312,7 @@ Url& Url::operator=(const string& s) throw(UrlParseError) {
 	return *this;
 }
 
-/* 
+/*
  * Note: URIs that differ in the replacement of a reserved character with its
  * corresponding percent-encoded octet are not equivalent
  */
@@ -327,7 +327,7 @@ bool Url::operator==(const Url& u) {
 	//cout << rhss << " " << lhss << endl;
 	if( rhss == lhss )
 		return true;
-	else 
+	else
 		return false;
 }
 
@@ -335,23 +335,23 @@ bool Url::operator!=(const Url& u) {
 	//cout << "operator!=" << endl;
 	if( *this == u )
 		return false;
-	else 
+	else
 		return true;
 }
 
 ostream& operator<<(ostream& os, const Url& u) {
 
-	if( u.has_authority() ) 
+	if( u.has_authority() )
 		os << "has_authority" << endl;
-	if( ! u._scheme.empty() ) 
+	if( ! u._scheme.empty() )
 		os << "scheme: " << u._scheme << endl;
 	if( ! u._userinfo.empty() )
 		os << "userinfo: " << u._userinfo << endl;
-	if( ! u._host.empty() ) 
+	if( ! u._host.empty() )
 		os << "host: " << u._host << endl;
-	if( ! u._port.empty() ) 
+	if( ! u._port.empty() )
 		os << "port: " << u._port << endl;
-	if( ! u._path.empty() ) 
+	if( ! u._path.empty() )
 		os << "path: " << u._path << endl;
 	if( u.has_query() ) {
 		os << "has_query" << endl;
@@ -360,7 +360,7 @@ ostream& operator<<(ostream& os, const Url& u) {
 	if( u.has_fragment() )  {
 		os << "has_authority" << endl;
 		os << "fragment: " << u._fragment << endl;
-	}	
+	}
 	os << endl;
 	return os;
 }
@@ -385,12 +385,12 @@ string Url::normalize_escapes(const string& s)  {
 	string res = unescape_safe(s);
 	for(string::iterator i = res.begin(); i != res.end(); ++i) {
 		if(*i == '%' && (i+1) != res.end() && (i+2) != res.end()
-			&& isxdigit(*(i+1)) && isxdigit(*(i+2)) ) { 
+			&& isxdigit(*(i+1)) && isxdigit(*(i+2)) ) {
 			*(i+1) = toupper(*(i+1)); // mandated by the rfc
 			*(i+2) = toupper(*(i+2));
 			i += 2;
 		}
-	}	
+	}
 	return res;
 }
 
@@ -422,18 +422,18 @@ void Url::scheme(const string& s)  throw(UrlParseError) {
 			_scheme = s;
 			to_lower(_scheme);
 			//if( _scheme == "file" )
-			//	authority("/");	
+			//	authority("/");
 			_has_authority = true;
-		} else 
-			throw UrlParseError("scheme: " + s + " doesn't match scheme validation regex"); 
+		} else
+			throw UrlParseError("scheme: " + s + " doesn't match scheme validation regex");
 	} catch(regex_error re) {
 		throw UrlParseError("Url::scheme("+s+"): boost::regex_error: " + re.what());
-	} catch(UrlParseError e) {	
+	} catch(UrlParseError e) {
 		throw;
 	} catch(...) {
 		throw UrlParseError("Url::scheme("+s+"): throwed an unknown exception");
 	}
-} 
+}
 
 /**
  * authority     = [ userinfo "@" ] host [ ":" port ]
@@ -446,7 +446,7 @@ void Url::authority(const string& s) throw(UrlParseError) {
 			assert(user_e - user_b > 0);
 			userinfo(s.substr(0,user_e - user_b));
 			if( ! ((host_b = (user_e+1)) < s.size()) ) throw UrlParseError("authority doesn't have host part: " + s);
-		}	
+		}
 		// IP-literal = "[" ( IPv6address / IPvFuture  ) "]"
 		if(	s[host_b] == '[' ) {
 			_host_ip_literal = true;
@@ -454,13 +454,13 @@ void Url::authority(const string& s) throw(UrlParseError) {
 			if( (host_e = s.find(']',host_b)) != string::npos) {
 				assert(host_e - host_b > 0 );
 				host(s.substr(host_b,host_e - host_b));
-			} else 
+			} else
 				throw UrlParseError("authority incomplete host part, couldn't find closing \']\':" + s.substr(host_b) + " : " + s);
 		} else {
 			if( (host_e = s.find(':',host_b)) == string::npos) { // no ":port" follows
 				host(s.substr(host_b));
 				/* if( ! _scheme.empty() )
-					set_def_port(); */ 
+					set_def_port(); */
 			} else {
 				if( host_e == host_b ) {
 					// starts with :
@@ -473,12 +473,12 @@ void Url::authority(const string& s) throw(UrlParseError) {
 						port(s.substr(port_b));
 					else
 						throw UrlParseError("no port number after :");
-				}		
-			}	
+				}
+			}
 		}
 	} catch(regex_error re) {
 		throw UrlParseError("Url::authority("+s+"): boost::regex_error: " + re.what());
-	} catch(UrlParseError e) {	
+	} catch(UrlParseError e) {
 		throw;
 	} catch(...) {
 		throw UrlParseError("Url::authority("+s+"): throwed an unknown exception");
@@ -501,11 +501,11 @@ string Url::authority() const  {
 		result += ']';
 	} else {
 		result += _host;
-	}	
+	}
 	if ( ! _port.empty()  ) {
 		result += ":";
 		result += _port;
-	}	
+	}
 	return result;
 }
 
@@ -514,11 +514,11 @@ bool Url::empty() const
 {
 	if( ! _scheme.empty() || _has_authority || ! _path.empty() || has_query() || has_fragment() )
 		return false;
-	else	
+	else
 		return true;
 }
 
-bool Url::absolute() const 
+bool Url::absolute() const
 {
 	if(  ! _scheme.empty()  )
 		return true;
@@ -526,7 +526,7 @@ bool Url::absolute() const
 		return false;
 }
 
-void Url::userinfo(const string& s) throw(UrlParseError) { 
+void Url::userinfo(const string& s) throw(UrlParseError) {
 	_userinfo.assign(escape(s,URL_CHAR_AUTH));
 }
 
@@ -539,7 +539,7 @@ void Url::host(const string& s) throw(UrlParseError) {
 		if(valid_host(norm)) {
 			_host.assign(norm);
 			_has_authority = true;
-		} else 
+		} else
 			throw UrlParseError("Url::host("+s+"): Invalid host");
 	} catch(UrlParseError) {
 		throw;
@@ -557,34 +557,34 @@ void Url::port(const string& s) throw(UrlParseError) {
 			_port.clear();
 		} else {
 			regex re(url_regex[RE_PORT]);
-			if( ! regex_match(s,re) ) 
+			if( ! regex_match(s,re) )
 				throw UrlParseError("Url::port("+s+"): Invalid port: regex didn't match");
 			int port;
 			istringstream is(s);
 			is >> port;
-			if( is.fail() ) 
+			if( is.fail() )
 				throw UrlParseError("Url::port("+s+"): not an integer");
 			if( ! (port < (1<<16) && port > 0) )
 				throw UrlParseError("Url::port("+s+"): out of range (0,2^16)");
 			_port.assign(s);
-		}	
+		}
 	} catch(regex_error re) {
 		throw UrlParseError("Url::port("+s+"): boost::regex_error: " + re.what());
-	} catch(UrlParseError e) {	
+	} catch(UrlParseError e) {
 		throw;
 	} catch(...) {
 		throw UrlParseError("Url::port("+s+"): throwed an unknown exception");
 	}
-} 
+}
 
 int Url::port_int() const throw(BadUrl) {
-	if( _port.empty() ) 
+	if( _port.empty() )
 		throw BadUrl("port is empty");
 	else {
 		int port;
 		istringstream is(_port);
 		is >> port;
-		if( is.fail() ) 
+		if( is.fail() )
 			throw BadUrl("port is not an integer");
 		if( ! (port < (1<<16) && port >= 0) )
 			throw BadUrl("port is out of range [0,2^16)");
@@ -612,15 +612,15 @@ void Url::path(const string& s) throw(UrlParseError) {
 		_path.absolute(true);
 }
 
-void Url::query(const string& s) throw(UrlParseError) { 
+void Url::query(const string& s) throw(UrlParseError) {
 	_query.assign(escape(s,URL_CHAR_QUERY));
 	//_has_query = true;
-} 
+}
 
 void Url::fragment(const string& s) throw(UrlParseError) {
 	_fragment.assign(escape(s,URL_CHAR_FRAGMENT));
 	//_has_fragment = true;
-} 
+}
 /***** END ACCESSORS *****/
 
 // This one is a bad idea, don't use it
@@ -636,9 +636,9 @@ void Url::set_def_port() throw(UrlParseError) {
 		else
 			throw UrlParseError("set_def_port: unknown default port for scheme: " + _scheme);
 
-	} else 
+	} else
 		throw UrlParseError("set_def_port: scheme is empty");
-	
+
 }
 
 
@@ -649,7 +649,7 @@ string Url::get() const {
 	if( ! _scheme.empty() )  {
 		res += scheme();
 		res += ":";
-	}	
+	}
 	if( has_authority() ) {
 		res += "//";
 		res += authority();
@@ -673,7 +673,7 @@ size_t Url::size() const {
 	if( ! _scheme.empty() )  {
 		res += _scheme.size();
 		++res;//  ":";
-	}	
+	}
 	if( has_authority() ) {
 		res+=2;// += "//";
 		res += authority().size();
@@ -706,18 +706,18 @@ string Url::escape(const string& s, const unsigned char mask) {
 	for(string::const_iterator j = s.begin(); j != s.end(); ++j)  {
 		if( url_char_test(*j, mask) ) {
 			if(*j == '%' && (j+1) != s.end() && (j+2) != s.end()
-				&& isxdigit(*(j+1)) && isxdigit(*(j+2)) ) { 
+				&& isxdigit(*(j+1)) && isxdigit(*(j+2)) ) {
 			} else {
 				reserve_ahead+=2; // escaping one, augments it by two more
 			}
 		}
-	}	
+	}
 	result.reserve(reserve_ahead);
 	for(string::const_iterator i = s.begin(); i != s.end(); ++i) {
 		if( url_char_test(*i, mask) ) {
 			//cout << "test: " << *i << hex <<(int) *i << endl;
 			if(*i == '%' && (i+1) != s.end() && (i+2) != s.end()
-				&& isxdigit(*(i+1)) && isxdigit(*(i+2)) ) { 
+				&& isxdigit(*(i+1)) && isxdigit(*(i+2)) ) {
 				// this is a valid escaped sequence, don't escape the %
 				result += *i;
 				result += *(i+1);
@@ -726,19 +726,19 @@ string Url::escape(const string& s, const unsigned char mask) {
 			} else {
 				char c1,c2;
 				//cout << " (*i) >> 4:" << hex << ((*i) >> 4) <<endl;
-				c1 = utils::digit_to_xnum((unsigned char)(*i) >> 4);	
-				c2 = utils::digit_to_xnum( (*i) & 0xf);	
+				c1 = utils::digit_to_xnum((unsigned char)(*i) >> 4);
+				c2 = utils::digit_to_xnum( (*i) & 0xf);
 				result += "%";
 				result += c1;
 				result += c2;
-			}	
+			}
 		} else {
 			result += (*i);
 		}
 	}
 	result.reserve(); // shrink to fit
 	return result;
-}	
+}
 
 string Url::unescape(const string& s) {
 	// avoid copying if there's nothing to unescape
@@ -748,13 +748,13 @@ string Url::unescape(const string& s) {
 	result.reserve(s.size());
 	for(string::const_iterator i = s.begin(); i != s.end(); ++i) {
 		if( *i == '%' && (i+1) != s.end() && (i+2) != s.end()
-		&& isxdigit(*(i+1)) && isxdigit(*(i+2)) // 
+		&& isxdigit(*(i+1)) && isxdigit(*(i+2)) //
 		&& ((*(i+1)) != 0 || (*(i+2)) != 0)) { // can't unescape null
 
 			char c = utils::x2digits_to_num(*(i+1),*(i+2));
 			result += c;
 			i += 2; // increment the iterator
-		} else 
+		} else
 			result += (*i);
 	}
 	result.reserve(); // shrink to fit
@@ -769,16 +769,16 @@ string Url::unescape(const string& s, const unsigned char mask) {
 	result.reserve(s.size());
 	for(string::const_iterator i = s.begin(); i != s.end(); ++i) {
 		if( *i == '%' && (i+1) != s.end() && (i+2) != s.end()
-		&& isxdigit(*(i+1)) && isxdigit(*(i+2)) // 
+		&& isxdigit(*(i+1)) && isxdigit(*(i+2)) //
 		&& ((*(i+1)) != 0 || (*(i+2)) != 0)) { // can't unescape null
 
 			char c = utils::x2digits_to_num(*(i+1),*(i+2));
 			if( url_char_test(c, mask)  ) {
 				result += c;
-				i += 2; 
-			} else 
+				i += 2;
+			} else
 				result += (*i);
-		} else 
+		} else
 			result += (*i);
 	}
 	result.reserve(); // shrink to fit
@@ -793,16 +793,16 @@ string Url::unescape_not(const string& s, const unsigned char mask) {
 	result.reserve(s.size());
 	for(string::const_iterator i = s.begin(); i != s.end(); ++i) {
 		if( *i == '%' && (i+1) != s.end() && (i+2) != s.end()
-		&& isxdigit(*(i+1)) && isxdigit(*(i+2)) // 
+		&& isxdigit(*(i+1)) && isxdigit(*(i+2)) //
 		&& ((*(i+1)) != 0 || (*(i+2)) != 0)) { // can't unescape null
 
 			char c = utils::x2digits_to_num(*(i+1),*(i+2));
 			if( (url_char_table[(unsigned char)(c)] & mask) == 0  ) {
 				result += c;
-				i += 2; 
-			} else 
+				i += 2;
+			} else
 				result += (*i);
-		} else 
+		} else
 			result += (*i);
 	}
 	result.reserve(); // shrink to fit
@@ -817,16 +817,16 @@ string Url::unescape_safe(const string& s) {
 	result.reserve(s.size());
 	for(string::const_iterator i = s.begin(); i != s.end(); ++i) {
 		if( *i == '%' && (i+1) != s.end() && (i+2) != s.end()
-		&& isxdigit(*(i+1)) && isxdigit(*(i+2)) // 
+		&& isxdigit(*(i+1)) && isxdigit(*(i+2)) //
 		&& ((*(i+1)) != 0 || (*(i+2)) != 0)) { // can't unescape null
 
 			char c = utils::x2digits_to_num(*(i+1),*(i+2));
 			if( (url_char_table[(unsigned char)(c)] & (URL_CHAR_RESERVED|URL_CHAR_UNSAFE)) == 0 ) { // not reserved or unsafe
 				result += c;
-				i += 2; 
-			} else 
+				i += 2;
+			} else
 				result += (*i);
-		} else 
+		} else
 			result += (*i);
 	}
 	result.reserve(); // shrink to fit
@@ -838,7 +838,7 @@ string Url::unescape_safe(const string& s) {
 #include <boost/python.hpp>
 using namespace boost::python;
 
-//BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(xf_overloads, scheme, 0, 1) 
+//BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(xf_overloads, scheme, 0, 1)
 BOOST_PYTHON_MODULE_INIT(url)
 {
 
@@ -877,7 +877,7 @@ BOOST_PYTHON_MODULE_INIT(url)
 		.def(not self)
 		//.def("merge_ref", &Url::merge_ref)
 		.def("assign", &Url::assign,
-			"assign new url from string")	
+			"assign new url from string")
 
 		.def("normalize", &Url::normalize,
 			"lowercases case insensitive parts and normalizes escape sequences, unescaping safe sequences, uppercasing escape indices and escaping unsafe characters. Two normalized urls should have the same string representation if they point to the same resource")
@@ -922,7 +922,7 @@ BOOST_PYTHON_MODULE_INIT(url)
 
 		.def("absolute", &Url::absolute)
 
-	;	
+	;
 
 	def("escape_reserved_unsafe", &Url::escape_reserved_unsafe);
 	def("unescape_all", unescape_all);

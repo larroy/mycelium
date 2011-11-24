@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Pedro Larroy Tovar 
+ * Copyright 2007 Pedro Larroy Tovar
  *
  * This file is subject to the terms and conditions
  * defined in file 'LICENSE.txt', which is part of this source
@@ -7,7 +7,7 @@
  */
 
 /**
- * @addtogroup crawler 
+ * @addtogroup crawler
  * @{
  */
 
@@ -39,7 +39,7 @@ public:
 
 /**
  * @brief A classifier which queues up urls grouped by host in N queues
- * 
+ *
  * top_q is queue for elements yet not classified
 
  * <PRE>
@@ -69,7 +69,7 @@ public:
     /// Adds an url to classify and enqueue
 	void push(const Url&);
 
-    /// Take a peek at queue n 
+    /// Take a peek at queue n
 	Url& peek(size_t n);
 
     /// Pop queue # @param n
@@ -85,12 +85,12 @@ public:
     /// @return true if the top queue is empty, meaning that all the items have been classified
 	bool empty_top();
 
-    /// @return number of elements in queue n 
+    /// @return number of elements in queue n
 	size_t q_len(size_t n);
 
     /// @return number of elements in top queue
 	size_t q_len_top();
-		
+
 private:
 
 	/**
@@ -98,7 +98,7 @@ private:
 	 */
 	struct table_elmt_t {
 		table_elmt_t(size_t nn) : host(), queue(new std::deque<Url>()), n(nn)
-		{} 
+		{}
 
 		std::string host;
 		boost::shared_ptr<std::deque<Url> > queue;
@@ -118,10 +118,10 @@ private:
 		table_elmt_t,
 		mi::indexed_by<
 			mi::ordered_non_unique<mi::tag<host>, mi::member<table_elmt_t,std::string,&table_elmt_t::host> >,
-			mi::sequenced<mi::tag<seq> >,	
+			mi::sequenced<mi::tag<seq> >,
 			//ordered_non_unique<tag<q>,	 member<table_elmt_t,boost::shared_ptr<std::deque<U> >,&table_elmt_t::q> >,
 			mi::ordered_unique<mi::tag<n>, mi::member<table_elmt_t,size_t,&table_elmt_t::n> >
-		> 
+		>
 	> table_t;
 
 	typedef table_t::index<host>::type tbl_host_idx_t;

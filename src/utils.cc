@@ -46,7 +46,7 @@ vector<uint8_t>& operator<<(vector<uint8_t>&buffer, int32_t value) {
     if (value < 0) {
         value = 0 - value;
         tmp = 0 - static_cast<uint32_t>(value);
-    } else 
+    } else
 		tmp = static_cast<uint32_t>(value);
 	vector<uint8_t>::size_type oldsize = buffer.size();
 	buffer.resize(oldsize + 4);
@@ -104,7 +104,7 @@ namespace utils {
 
 		act.sa_handler = SIG_DFL;
 		if( sigaction(SIGCHLD, &act, &old_act) < 0)
-			utils::err_sys("sigaction error");	
+			utils::err_sys("sigaction error");
 
 		va_list ap;
 		vector<char*> arglist;
@@ -113,18 +113,18 @@ namespace utils {
 		va_start(ap,cmd);
 		while( (cur=va_arg(ap,char*)) != NULL)
 			arglist.push_back(strdup(cur));
-		va_end(ap);	
+		va_end(ap);
 		arglist.push_back(NULL);
 		int status=0;
 		pid_t chld;
 		if( (chld = fork()) > 0 ) {
-			for(vector<char*>::iterator i = arglist.begin()+1; i != arglist.end(); ++i) 
+			for(vector<char*>::iterator i = arglist.begin()+1; i != arglist.end(); ++i)
 				free(*i);
 			if( waitpid(chld, &status, 0) < 0 ) {
 				perror("wait failed");
 				exit(EXIT_FAILURE);
-			}	
-		} else if(chld < 0) {	
+			}
+		} else if(chld < 0) {
 			perror("fork failed");
 			exit(EXIT_FAILURE);
 		} else {
@@ -134,7 +134,7 @@ namespace utils {
 		}
 		// restore old signal handler
 		if( sigaction(SIGCHLD, &old_act, NULL) < 0)
-			utils::err_sys("sigaction error");	
+			utils::err_sys("sigaction error");
 		return status;
 	}
 
@@ -151,7 +151,7 @@ namespace utils {
 
 		act.sa_handler = SIG_DFL;
 		if( sigaction(SIGCHLD, &act, &old_act) < 0)
-			utils::err_sys("sigaction error");	
+			utils::err_sys("sigaction error");
 
 		va_list ap;
 		vector<char*> arglist;
@@ -160,16 +160,16 @@ namespace utils {
 		va_start(ap,cmd);
 		while( (cur=va_arg(ap,char*)) != NULL)
 			arglist.push_back(strdup(cur));
-		va_end(ap);	
+		va_end(ap);
 		arglist.push_back(NULL);
 
 		int fd[2];
-		pipe(fd);	
+		pipe(fd);
 
 		int status=0;
 		pid_t chld;
 		if( (chld = fork()) > 0 ) {
-			for(vector<char*>::iterator i = arglist.begin()+1; i != arglist.end(); ++i) 
+			for(vector<char*>::iterator i = arglist.begin()+1; i != arglist.end(); ++i)
 				free(*i);
 			close(fd[W]);
 			char buf[1024];
@@ -182,8 +182,8 @@ namespace utils {
 			if( waitpid(chld, &status, 0) < 0 ) {
 				perror("wait failed");
 				exit(EXIT_FAILURE);
-			}	
-		} else if(chld < 0) {	
+			}
+		} else if(chld < 0) {
 			perror("fork failed");
 			exit(EXIT_FAILURE);
 		} else {
@@ -201,19 +201,19 @@ namespace utils {
 		}
 		// restore old signal handler
 		if( sigaction(SIGCHLD, &old_act, NULL) < 0)
-			utils::err_sys("sigaction error");	
+			utils::err_sys("sigaction error");
 
 		return status;
 	}
-#undef R	
-#undef W	
+#undef R
+#undef W
 
 	int err_sys(std::string s) {
 		std::string err;
 		char *err_str = std::strerror(errno);
 		if( err_str )
 			err = s + " error: " + std::strerror(errno)  + "\n";
-		else	
+		else
 			err = s + " error: unknown (strerror returned NULL)\n";
 		throw std::runtime_error(err);
 	}
@@ -232,7 +232,7 @@ namespace utils {
 			slash = strchr(slash+1, '/');
 			if( slash != NULL )
 				len = slash - path;
-			else	
+			else
 				len = strlen(path);
 			//memcpy(buf, path, len);
 			buf.assign(path,len);
@@ -240,10 +240,10 @@ namespace utils {
 			res = mkdir(buf.c_str(), 00775);
 			if( res != 0 && errno != EEXIST)
 				err_sys(fs("mkdir \"" << buf << "\""));
-			if(!slash)	
+			if(!slash)
 				break;
 			//cout << "mkdir " << buf << endl;
-			
+
 			//if( res )
 			//	throw err_sys(fs("mkdir " << buf << " :"));
 		}
@@ -308,7 +308,7 @@ namespace utils {
 	{
 		if( scheme  == SCHEME_HTTP )
 			return "http";
-		else if( scheme == SCHEME_FILE)	
+		else if( scheme == SCHEME_FILE)
 			return "file";
 		else if( scheme == SCHEME_FTP)
 			return "ftp";
@@ -317,7 +317,7 @@ namespace utils {
 		else
 			throw logic_error("unrecognized scheme");
 	}
-#endif	
+#endif
 
 #if 0
 	int scheme_string_2_int(const string& scheme_in)
@@ -326,14 +326,14 @@ namespace utils {
 		boost::to_lower(scheme);
 		if( scheme  == "http" )
 			return SCHEME_HTTP;
-		else if( scheme == "file")	
+		else if( scheme == "file")
 			return SCHEME_FILE;
 		else if( scheme == "ftp")
 			return SCHEME_FTP;
 		else
 			return SCHEME_UNSUPPORTED;
 	}
-#endif	
+#endif
 
 
 	std::string Timestamp::get()
@@ -343,7 +343,7 @@ namespace utils {
 		time(&tnow);
 		struct tm* now  = localtime(&tnow);
 		os << now->tm_hour << ":" << now->tm_min << ":" << now->tm_sec;
-		return os.str();	
+		return os.str();
 
 	}
 
@@ -443,7 +443,7 @@ namespace utils {
 			else if( *(uint16_t*)buf  == 0xFFFE )
 				//return content_type::FILE_TEXT_UTF16LE;
 				return "UTF-16LE";
-			if(nbytes >= 3 && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF) 
+			if(nbytes >= 3 && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF)
 				//return content_type::FILE_TEXT_UTF8;
 				return "UTF-8";
 			if(nbytes >= 4 && *(uint32_t*)buf == 0x0000FEFF)
@@ -463,9 +463,9 @@ namespace utils {
 		if( strncmp((const char*)(buf),"%PDF-",5) == 0 ) {
 			if(maj)
 				*maj = buf[5];
-			if(min)	
+			if(min)
 				*min = buf[7];
-			return true;	
+			return true;
 		}
 		return false;
 	}
@@ -565,13 +565,13 @@ namespace utils {
     }
 #endif
 
-} // end namespace utils	
+} // end namespace utils
 
 std::ostream& operator<<(std::ostream& os, const utils::Timestamp& t)
 {
 	os << utils::Timestamp::get();
 	return os;
-}	
+}
 
 std::auto_ptr<std::ostringstream> utils::getoss()
 {

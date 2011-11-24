@@ -8,7 +8,7 @@
 
 
 /**
- * @addtogroup Url 
+ * @addtogroup Url
  * @brief Handling of RFC 3986 urls
  *
  * @{
@@ -39,11 +39,11 @@ class Path {
 		}
 		Path():segmt(),flags() {
 		}
-		
-		void merge(const Path& p);	
+
+		void merge(const Path& p);
 		std::string get() const;
 		void assign(const std::string& s);
-		
+
 		Path& operator=(const std::string& s) {
 			assign(s);
 			return *this;
@@ -74,11 +74,11 @@ class Path {
 		 * returns true if the path is absolute, false otherwise
 		 */
 		bool absolute() const {
-			return flags.test(SLASH_BEGIN); 
+			return flags.test(SLASH_BEGIN);
 		}
 
 		/**
-		 * goes one directory up if possible, else noop 
+		 * goes one directory up if possible, else noop
 		 */
 		bool updir();
 
@@ -88,7 +88,7 @@ class Path {
 
 		/**
 		 * Make this path empty
-		 */ 
+		 */
 		void clear() {
 			segmt.clear();
 			flags.reset(SLASH_END);
@@ -101,21 +101,21 @@ class Path {
 			else
 				return false;
 		}
-	
+
 		friend std::ostream& operator<<(std::ostream& os, const Path& p) {
 			if( ! p.empty() )
 				os << p.get();
-						
+
 			return os;
 		}
-		
-	friend class Url_lexer;	
+
+	friend class Url_lexer;
 	friend class Url;
-		
+
 	protected:
 		std::list<std::string> segmt;
 		static size_t const FLAGSSIZE = 2;
-		enum flags { 
+		enum flags {
 			SLASH_END,
 			SLASH_BEGIN
 		};

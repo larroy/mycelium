@@ -8,7 +8,7 @@
 
 
 /**
- * @addtogroup Url 
+ * @addtogroup Url
  * @brief Handling of RFC 3986 urls
  *
  * @{
@@ -16,7 +16,7 @@
 
 /**
  * @class Url Url.hh
- * @brief handles URLs 
+ * @brief handles URLs
  *
  * Utility to break them in its constituent parts according to RFC3986
  *
@@ -30,18 +30,18 @@
  *        \_______________________/
  *                  |
  *              hier_part
- *				
+ *
  * Most important ABNF rules:
- * 
+ *
  * authority     = [ userinfo "@" ] host [ ":" port ]
  * URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
  *
- * \endverbatim				
+ * \endverbatim
  *
  */
 
 #ifndef Url_hh
-#define Url_hh 
+#define Url_hh
 
 #include <string>
 #include <stdexcept>
@@ -99,7 +99,7 @@ namespace Url_util {
 		"|(((" h16 ":){0,4}" h16 ")?::" ls32 ")"\
 		"|(((" h16 ":){0,5}" h16 ")?::" h16 ")"\
 		"|(((" h16 ":){0,6}" h16 ")?::)"\
-		")" 
+		")"
 
 /**
  * Url parsing regular expressions
@@ -211,29 +211,29 @@ static const unsigned char url_char_table[256] =
 #define URL_UNSAFE(c) url_char_test(c, URL_CHAR_UNSAFE)
 */
 
-} // end namespace 
+} // end namespace
 
 /**
  * @class Flags Url.hh
  * @author piotr
- * @brief handles URL flags 
+ * @brief handles URL flags
  * \verbatim
  * Url Flags
  *
- * 16 bits for flags 
+ * 16 bits for flags
  *
  *  |15|14|13|12|11|10| 9| 8| 7| 6| 5| 4| 3| 2| 1| 0|
  *  |      priority         |   depth   |           |
  *
  *  higher priorities favor crawling sooner
  *  depth of 0 means not recursing, max depth is 2^4-2 = 14, 15 is infinite
- *  
- * \endverbatim				
- * 
+ *
+ * \endverbatim
+ *
  */
 
 /*
- 
+
 class UrlFlags {
 	public:
 		typedef uint16_t flags_t;
@@ -262,7 +262,7 @@ class UrlFlags {
 			if( (prio & ~0x00ff) != 0 ) {
 				clog << "prio value too high, setting at max" << endl;
 				_flags |= 0xff00;
-			} else {	
+			} else {
 				prio &= 0x00ff;
 				prio <<= 8;
 				_flags &= 0x00ff; // delete priority
@@ -279,13 +279,13 @@ class UrlFlags {
 			} else {
 				depth &= 0x000f;
 				depth <<= 4;
-				_flags &= ~depth_mask; 
+				_flags &= ~depth_mask;
 				_flags |= depth;
-			}	
+			}
 		}
 	private:
 		flags_t _flags;
-}; 
+};
 
 */
 
@@ -316,7 +316,7 @@ class Url {
 	public:
 		explicit Url(const std::string& s) throw(UrlParseError);
 		explicit Url() ;
-		
+
 		~Url()  {};
 
 		void print() {
@@ -326,7 +326,7 @@ class Url {
 		void assign(const std::string& s) throw(UrlParseError);
 		/**
 		 * @brief Merge with a relative reference
-		 * transform a relative referecence u into the target url see [RFC3986 Page 34] 
+		 * transform a relative referecence u into the target url see [RFC3986 Page 34]
 		 */
 		Url& merge_ref(const Url& u) throw(BadUrl);
 		/*** OPERATORS ***/
@@ -342,13 +342,13 @@ class Url {
 		// Safe bool idiom, operator bool causes unintended conversions to char, so we can use operator std::string
 		// http://www.artima.com/cppsource/safebool2.html
 		typedef void (Url::*safe_bool)() const;
-		operator safe_bool() const { 
+		operator safe_bool() const {
 			//std::cout << "safe bool" << std::endl;
 			if(empty())
 				return 0;
 			else
 				return &Url::safe_bool_aux;
-		} 
+		}
 		void safe_bool_aux() const {}
 		//
 
@@ -385,7 +385,7 @@ class Url {
 
 
 		bool empty() const;
-		
+
 
 		/**
 		 * Get the whole url as std::string
@@ -399,7 +399,7 @@ class Url {
 		std::string as_string() const { return get(); };
 
 		/**
-		 * Size of the url when represented as an string 
+		 * Size of the url when represented as an string
 		 */
 		size_t size() const;
 
@@ -429,7 +429,7 @@ class Url {
 		 * Unescape everything pct encoded
 		 */
 		static std::string unescape(const std::string& s);
-		
+
 		/**
 		 * The rfc says: "If a URI does not contain an authority component, then the path cannot begin with two slash characters ("//")"
 		 * But then, there are the file:// URIs that can be file:///tmp/ or similar, so this apparently violates the rfc.
@@ -438,7 +438,7 @@ class Url {
 		bool syntax_ok() const ;
 		bool valid_host() const throw(boost::regex_error);
 		static bool valid_host(const std::string&) throw(boost::regex_error);
-		
+
 		/***** ACCESSORS *****/
 		void scheme(const std::string& s) throw(UrlParseError);
 		std::string scheme() const  { return _scheme; }
@@ -482,7 +482,7 @@ class Url {
 
 		void userinfo(const std::string& s) throw(UrlParseError);
 		std::string userinfo() const  { return _userinfo; }
-		
+
 		void host(const std::string& s) throw(UrlParseError);
 		std::string host() const  { return _host; }
 
@@ -508,7 +508,7 @@ class Url {
 
 		Path		_path;
 
-	friend class Url_lexer;	
+	friend class Url_lexer;
 
 //	protected:
 		/**
@@ -522,7 +522,7 @@ class Url {
 		 * one of those long urls with @ at the end that could mislead the user
 		 */
 		bool	_suspicious;
-		
+
 		std::string		_scheme;
 
 		// authority
@@ -544,6 +544,6 @@ class Url {
 };
 
 
-#endif 
+#endif
 /** @} */
 

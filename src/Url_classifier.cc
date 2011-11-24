@@ -14,11 +14,11 @@ bool Url_classifier::empty()
 {
 	if( ! top_q.empty() )
 		return false;
-	
+
 	for(tbl_seq_idx_t::iterator i = table.get<seq>().begin(); i != table.get<seq>().end(); ++i)
 		if( ! i->queue->empty())
 			return false;
-	
+
 	return true;
 }
 
@@ -27,7 +27,7 @@ size_t Url_classifier::q_len(size_t num)
 	tbl_n_idx_t::iterator i;
 	if( (i = table.get<n>().find(num)) != table.get<n>().end() ) {
 		return i->queue->size();
-	} else	
+	} else
 		throw runtime_error("no such num exist");
 }
 
@@ -43,9 +43,9 @@ bool Url_classifier::empty(size_t num)
 	if( (i = table.get<n>().find(num)) != table.get<n>().end() ) {
 		if( i->queue->empty() )
 			return true;
-		else 
+		else
 			return false;
-	} else	
+	} else
 		throw runtime_error("no such num exist");
 }
 
@@ -53,7 +53,7 @@ bool Url_classifier::empty_top()
 {
 	if( ! top_q.empty() )
 		return false;
-	else 
+	else
 		return true;
 }
 
@@ -68,26 +68,26 @@ void Url_classifier::push(const Url& u)
 	} else {
 		for(tbl_seq_idx_t::iterator j = table.get<seq>().begin(); j != table.get<seq>().end(); ++j) {
 			if( j->queue->empty()) {
-				table_elmt_t t(*j);		
+				table_elmt_t t(*j);
 				t.host = u.host();
 				t.queue->push_back(u);
 				assert(table.get<seq>().replace(j,t) == true);
 				return;
 			}
-		}	
+		}
 
 		// put it in that top_q
 		//cout << "push in top_q" << endl;
 		top_q.push(u);
 	}
-}	
+}
 
 ostream& operator<<(ostream& os, const Url_classifier& u)
 {
 //	std::priority_queue<Url, std::deque<Url> >::iterator ti;
 //	os << "top_q: " << endl;
 //	for( ti = top_q.begin(); ti != top_q.end(); ++ti) {
-//		os << "\t" << (*ti).get() << endl;	
+//		os << "\t" << (*ti).get() << endl;
 //	}
 
 	Url_classifier::tbl_n_idx_t::iterator i;
@@ -157,7 +157,7 @@ Url& Url_classifier::peek(size_t num)
 		}
 	} else if(! top_q.empty()) {
 		//cout << "new q n: " << num << endl;
-		table_elmt_t t(num);		
+		table_elmt_t t(num);
 
 
 		t.host = top_q.top().host();

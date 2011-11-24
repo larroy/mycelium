@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Pedro Larroy Tovar 
+ * Copyright 2007 Pedro Larroy Tovar
  *
  * This file is subject to the terms and conditions
  * defined in file 'LICENSE.txt', which is part of this source
@@ -7,7 +7,7 @@
  */
 
 #ifndef Doc_hh
-#define Doc_hh 
+#define Doc_hh
 #include <string>
 #include <zlib.h>
 #include "Url.hh"
@@ -45,7 +45,7 @@
 
 const char* get_dbdir();
 /**
- * @class Doc 
+ * @class Doc
  * @author piotr
  * @brief Base class for documents
  * A crawled url becomes a document
@@ -53,7 +53,7 @@ const char* get_dbdir();
  */
 
 struct Doc : boost::noncopyable {
-	Doc() : 
+	Doc() :
 		url(),
 		http_code(0),
 		curl_code(-1),
@@ -80,7 +80,7 @@ struct Doc : boost::noncopyable {
 	~Doc();
 
 	enum {
-		FLAG_EMPTY = 0,	
+		FLAG_EMPTY = 0,
 		FLAG_UTF8_OK = 1,
 		FLAG_HAS_SYNDICATION,
 		FLAG_IS_SYNDICATED,
@@ -88,7 +88,7 @@ struct Doc : boost::noncopyable {
 		FLAG_FOLLOW,
 		FLAG_SIZE
 	};
-	
+
 	void save();
 	bool load_url(const Url& url);
 	void load_leaf(const std::string& leaf);
@@ -106,7 +106,7 @@ struct Doc : boost::noncopyable {
     void lock();
     void unlock() { hash_bucket.reset(); }
     bool locked() { return hash_bucket ? true : false; }
-	
+
 	Url			url;
 	long		http_code;
 	int			curl_code;
