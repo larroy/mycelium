@@ -313,234 +313,257 @@ class UrlParseError : public BadUrl {
 
 
 class Url {
-    public:
-        explicit Url(const std::string& s) throw(UrlParseError);
-        explicit Url() ;
+public:
+    /// @throw UrlParseError on url parsing error
+    explicit Url(const std::string& s);
+    explicit Url() ;
 
-        ~Url()  {};
+    ~Url()  {};
 
-        void print() {
-            std::cout << this;
-        }
+    void print()
+    {
+        std::cout << this;
+    }
 
-        void assign(const std::string& s) throw(UrlParseError);
-        /**
-         * @brief Merge with a relative reference
-         * transform a relative referecence u into the target url see [RFC3986 Page 34]
-         */
-        Url& merge_ref(const Url& u) throw(BadUrl);
-        /*** OPERATORS ***/
-        Url& operator=(const std::string& s) throw(UrlParseError);
-        /**
-         * This is used for merging two relative URIs or one absolute URI and a relative one. Since merging with an absolute URI just overwrites everything.
-         * Urls with authority have absolute paths
-         */
-        Url& operator+=(const Url& u) throw(BadUrl);
-        bool operator==(const Url& u);
-        bool operator!=(const Url& u);
+    /// @throw UrlParseError on url parsing error
+    void assign(const std::string& s);
 
-        // Safe bool idiom, operator bool causes unintended conversions to char, so we can use operator std::string
-        // http://www.artima.com/cppsource/safebool2.html
-        typedef void (Url::*safe_bool)() const;
-        operator safe_bool() const {
-            //std::cout << "safe bool" << std::endl;
-            if(empty())
-                return 0;
-            else
-                return &Url::safe_bool_aux;
-        }
-        void safe_bool_aux() const {}
-        //
+    /**
+     * @brief Merge with a relative reference
+     * transform a relative referecence u into the target url see [RFC3986 Page 34]
+     */
+    Url& merge_ref(const Url& u);
 
-        operator std::string() { return get(); }
+    /*** OPERATORS ***/
+    Url& operator=(const std::string& s);
 
-        friend std::ostream& operator<<(std::ostream& os, const Url& u);
-        /**
-         * scheme and host are case insensitive
-         */
-        void normalize_scheme() ;
-        void normalize_host() ;
-        /**
-         * normalize pct-encoded escapes to uppercase as mandated by rfc
-         */
-        void normalize_escapes() throw(std::runtime_error);
-        static std::string normalize_escapes(const std::string&) ;
-        /**
-         * does all normalizations
-         */
-        void normalize() throw(std::runtime_error);
+    /**
+     * This is used for merging two relative URIs or one absolute URI and a relative one. Since merging with an absolute URI just overwrites everything.
+     * Urls with authority have absolute paths
+     * @throws BadUrl
+     */
+    Url& operator+=(const Url& u);
+    bool operator==(const Url& u);
+    bool operator!=(const Url& u);
 
-        void clear() {
-            _good_url=false;
-            _suspicious=false;
+    // Safe bool idiom, operator bool causes unintended conversions to char, so we can use operator std::string
+    // http://www.artima.com/cppsource/safebool2.html
+    typedef void (Url::*safe_bool)() const;
 
-            _scheme.clear();
-            clear_authority();
+    operator safe_bool() const
+    {
+        //std::cout << "safe bool" << std::endl;
+        if(empty())
+            return 0;
+        else
+            return &Url::safe_bool_aux;
+    }
+    void safe_bool_aux() const {}
 
-            _path.clear();
+    operator std::string() { return get(); }
 
-            clear_query();
-            clear_fragment();
-        }
+    friend std::ostream& operator<<(std::ostream& os, const Url& u);
+    /**
+     * scheme and host are case insensitive
+     */
+    void normalize_scheme() ;
+    void normalize_host() ;
+    /**
+     * normalize pct-encoded escapes to uppercase as mandated by rfc
+     */
+    void normalize_escapes();
+    static std::string normalize_escapes(const std::string&) ;
+    /**
+     * does all normalizations
+     */
+    void normalize();
 
+    void clear() {
+        m_suspicious=false;
 
-        bool empty() const;
+        m_scheme.clear();
+        clear_authority();
 
+        _path.clear();
 
-        /**
-         * Get the whole url as std::string
-         */
-
-        /**
-         * Get the whole url as std::string
-         */
-        std::string get() const;
-        std::string to_string() const { return get(); };
-        std::string as_string() const { return get(); };
-
-        /**
-         * Size of the url when represented as an string
-         */
-        size_t size() const;
-
-        static std::string escape_reserved_unsafe(const std::string& s);
-
-        /**
-         * escapes characters using the supplied mask
-         */
-        static std::string escape(const std::string& s, const unsigned char mask);
-
-        /**
-         * Unescapes characters that match the char table given the mask
-         */
-        static std::string unescape(const std::string& s, const unsigned char mask);
-
-        /**
-         * Unescapes those that don't match the mask
-         */
-        static std::string unescape_not(const std::string& s, const unsigned char mask);
-
-        /**
-         * Unescape those which are safe
-         */
-        static std::string unescape_safe(const std::string& s);
-
-        /**
-         * Unescape everything pct encoded
-         */
-        static std::string unescape(const std::string& s);
-
-        /**
-         * The rfc says: "If a URI does not contain an authority component, then the path cannot begin with two slash characters ("//")"
-         * But then, there are the file:// URIs that can be file:///tmp/ or similar, so this apparently violates the rfc.
-         */
-        bool good_url() const  { return (_good_url && syntax_ok()); }
-        bool syntax_ok() const ;
-        bool valid_host() const throw(boost::regex_error);
-        static bool valid_host(const std::string&) throw(boost::regex_error);
-
-        /***** ACCESSORS *****/
-        void scheme(const std::string& s) throw(UrlParseError);
-        std::string scheme() const  { return _scheme; }
-
-        void authority(const std::string& s) throw(UrlParseError);
-        std::string authority() const ;
-
-        /**
-         * authority     = [ userinfo "@" ] host [ ":" port ]
-         */
-        bool has_authority() const  { return _has_authority; }
-
-        bool has_scheme() const  { return (! _scheme.empty()); }
-
-        void clear_authority()  {
-            _host_ip_literal=false;
-            _has_authority = false;
-            _userinfo.clear();
-            _host.clear();
-            _port.clear();
-        }
-
-        bool has_query() const  { return ! _query.empty(); }
-
-        void clear_query()  {// _has_query = false;
-        _query.clear(); }
-
-        bool has_fragment() const  { return ! _fragment.empty(); }
-
-        void clear_fragment()  {// _has_fragment = false;
-        _fragment.clear(); }
-
-        /**
-         * absolute-URI  = scheme ":" hier-part [ "?" query ]
-         * hier-part     = "//" authority path-abempty
-         *                    / path-absolute
-         *                    / path-rootless
-         *                    / path-empty
-         */
-        bool absolute() const ;
-
-        void userinfo(const std::string& s) throw(UrlParseError);
-        std::string userinfo() const  { return _userinfo; }
-
-        void host(const std::string& s) throw(UrlParseError);
-        std::string host() const  { return _host; }
-
-        void port(const std::string& s) throw(UrlParseError);
-        std::string port() const;
-        int port_int() const throw(BadUrl);
-
-        void path(const std::string& s) throw(UrlParseError);
-        std::string path() const  { return _path.get(); }
-        /**
-         * Remove dot segments
-         */
-        void normalize_path()  { _path.normalize(); };
+        clear_query();
+        clear_fragment();
+    }
 
 
-        void query(const std::string& s) throw(UrlParseError);
-        std::string query() const  { return _query; }
+    bool empty() const;
 
-        void fragment(const std::string& s) throw(UrlParseError);
-        std::string fragment() const  { return _fragment; }
-        /***** END ACCESSORS *****/
-        void set_def_port() throw(UrlParseError);
 
-        Path        _path;
+    /**
+     * Get the whole url as std::string
+     */
+
+    /**
+     * Get the whole url as std::string
+     */
+    std::string get() const;
+    std::string to_string() const { return get(); };
+    std::string as_string() const { return get(); };
+
+    /**
+     * Size of the url when represented as an string
+     */
+    size_t size() const;
+
+    static std::string escape_reserved_unsafe(const std::string& s);
+
+    /**
+     * escapes characters using the supplied mask
+     */
+    static std::string escape(const std::string& s, const unsigned char mask);
+
+    /**
+     * Unescapes characters that match the char table given the mask
+     */
+    static std::string unescape(const std::string& s, const unsigned char mask);
+
+    /**
+     * Unescapes those that don't match the mask
+     */
+    static std::string unescape_not(const std::string& s, const unsigned char mask);
+
+    /**
+     * Unescape those which are safe
+     */
+    static std::string unescape_safe(const std::string& s);
+
+    /**
+     * Unescape everything pct encoded
+     */
+    static std::string unescape(const std::string& s);
+
+    /**
+     * The rfc says: "If a URI does not contain an authority component, then the path cannot begin with two slash characters ("//")"
+     * But then, there are the file:// URIs that can be file:///tmp/ or similar, so this apparently violates the rfc.
+     * @throws boost::regex_error
+     */
+    bool syntax_ok() const ;
+    bool valid_host() const;
+    static bool valid_host(const std::string&);
+
+    /***** ACCESSORS *****/
+    void scheme(const std::string& s);
+    std::string scheme() const
+    {
+        return m_scheme;
+    }
+
+    void authority(const std::string& s);
+    std::string authority() const ;
+
+    /**
+     * authority     = [ userinfo "@" ] host [ ":" port ]
+     */
+    bool has_authority() const
+    {
+        return m_has_authority;
+    }
+
+    bool has_scheme() const
+    {
+        return (! m_scheme.empty());
+    }
+
+    void clear_authority()  {
+        m_host_ip_literal=false;
+        m_has_authority = false;
+        m_userinfo.clear();
+        m_host.clear();
+        m_port.clear();
+    }
+
+    bool has_query() const  { return ! m_query.empty(); }
+
+    void clear_query()
+    {
+        // _has_query = false;
+        m_query.clear();
+    }
+
+    bool has_fragment() const  { return ! m_fragment.empty(); }
+
+    void clear_fragment()
+    {
+        // _has_fragment = false;
+        m_fragment.clear();
+    }
+
+    /**
+     * absolute-URI  = scheme ":" hier-part [ "?" query ]
+     * hier-part     = "//" authority path-abempty
+     *                    / path-absolute
+     *                    / path-rootless
+     *                    / path-empty
+     */
+    bool absolute() const ;
+
+    void userinfo(const std::string& s);
+    std::string userinfo() const
+    {
+        return m_userinfo;
+    }
+
+    void host(const std::string& s);
+    std::string host() const
+    {
+        return m_host;
+    }
+
+    void port(const std::string& s);
+    std::string port() const;
+    int port_int() const;
+
+    void path(const std::string& s);
+    std::string path() const
+    {
+        return _path.get();
+    }
+
+    /// Remove dot segments
+    void normalize_path()  { _path.normalize(); };
+
+    void query(const std::string& s);
+    std::string query() const  { return m_query; }
+
+    void fragment(const std::string& s);
+    std::string fragment() const  { return m_fragment; }
+
+    void set_def_port();
+
+    Path        _path;
 
     friend class Url_lexer;
 
 //    protected:
-        /**
-         * host must be enclosed by []
-         */
-        /**
-         * the urls looks correct, passed all the checks
-         */
-        bool    _good_url;
-        /**
-         * one of those long urls with @ at the end that could mislead the user
-         */
-        bool    _suspicious;
+    /**
+     * host must be enclosed by []
+     */
+    /**
+     * one of those long urls with @ at the end that could mislead the user
+     */
+    bool m_suspicious;
 
-        std::string        _scheme;
+    std::string m_scheme;
 
-        // authority
-        bool        _has_authority;
-        bool        _host_ip_literal;
-        std::string        _userinfo;
-        std::string        _host;
-        std::string        _port;
+    // authority
+    bool m_has_authority;
+    bool m_host_ip_literal;
+    std::string m_userinfo;
+    std::string m_host;
+    std::string m_port;
 
-        // query
-        //bool        _has_query;
-        std::string        _query;
+    // query
+    //bool        _has_query;
+    std::string m_query;
 
-        // fragment
-        //bool        _has_fragment;
-        std::string        _fragment;
-
-
+    // fragment
+    //bool        _has_fragment;
+    std::string m_fragment;
 };
 
 

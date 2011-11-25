@@ -23,71 +23,33 @@ static const char* scheme_defport[] = {
 
 static const boost::regex url_re(url_regex[RE_URL],regex_constants::perl);
 
-/*Url::Url(const std::string& s)  throw(UrlParseError) :
-    _path(),  _good_url(), _scheme(),
-    _userinfo(), _host(), _port(),
-    _query(), _fragment() {
-
-    stringstream is(s);
-    Url_lexer url_lexer(&is,this);
-    url_lexer.yylex();
-    if( this->good_url() ) {
-        DLOG(clog << "good url: " << s << endl;);
-    } else {
-        // log it
-        DLOG(clog << "bad url: " << s << endl;);
-        throw UrlParseError("Url parsing error, url: " + s);
-    }
-}*/
-
-
 
 #define base_ctors\
     _path(),\
-    _good_url(),\
-    _suspicious(),\
-    _scheme(),\
-    _has_authority(),\
-    _host_ip_literal(),\
-    _userinfo(),\
-    _host(),\
-    _port(),\
-    _query(),\
-    _fragment()
+    m_suspicious(),\
+    m_scheme(),\
+    m_has_authority(),\
+    m_host_ip_literal(),\
+    m_userinfo(),\
+    m_host(),\
+    m_port(),\
+    m_query(),\
+    m_fragment()
 
-Url::Url(const std::string& s)  throw(UrlParseError) :
+Url::Url(const std::string& s) :
     base_ctors
 {
-        assign(s);
-
+    assign(s);
 }
 
 Url::Url()  :
     base_ctors
 {
-
 }
 #undef base_ctors
 
-
-// With the LEXER (BROKEN)
-/*void Url::assign(const string& s) throw(UrlParseError) {
-    this->clear();
-    stringstream is(s);
-    Url_lexer url_lexer(&is,this);
-    url_lexer.yylex();
-    if( this->good_url() ) {
-        DLOG(clog << "good url: " << s << endl;);
-        return;
-    } else {
-        // log it
-        DLOG(clog << "bad url: " << s << endl;)
-        throw UrlParseError("Url parsing error, url: " + s);
-    }
-}*/
-
-// With regexp
-void Url::assign(const string& s) throw(UrlParseError) {
+void Url::assign(const string& s)
+{
     this->clear();
     enum {
         URL = 0,
@@ -151,11 +113,6 @@ void Url::assign(const string& s) throw(UrlParseError) {
         string s("Url::assign() boost::regex_error: ");
         s+=re.what();
         throw UrlParseError(s);
-
-    } catch(UrlParseError e) {
-        throw;
-    } catch(...) {
-        throw UrlParseError("Url::assign() throwed an unknown exception");
     }
 }
 
@@ -183,7 +140,8 @@ bool Url::syntax_ok() const  {
     return true;
 }
 
-bool Url::valid_host() const throw(boost::regex_error) {
+bool Url::valid_host() const
+{
     if( host().empty() )
         return true;
     regex re;
@@ -208,7 +166,8 @@ bool Url::valid_host() const throw(boost::regex_error) {
     return false;
 }
 
-bool Url::valid_host(const std::string& h) throw(boost::regex_error) {
+bool Url::valid_host(const std::string& h)
+{
     if( h.empty() )
         return true;
     regex re;
@@ -233,7 +192,8 @@ bool Url::valid_host(const std::string& h) throw(boost::regex_error) {
     return false;
 }
 
-Url& Url::merge_ref(const Url& u) throw(BadUrl) {
+Url& Url::merge_ref(const Url& u)
+{
 
     if( ! u.syntax_ok() )
         throw BadUrl("supplied url ! syntax_ok");
@@ -303,11 +263,13 @@ Url& Url::merge_ref(const Url& u) throw(BadUrl) {
     return *this;
 }
 
-Url& Url::operator+=(const Url& u) throw(BadUrl) {
+Url& Url::operator+=(const Url& u)
+{
     return merge_ref(u);
 }
 
-Url& Url::operator=(const string& s) throw(UrlParseError) {
+Url& Url::operator=(const string& s)
+{
     assign(s);
     return *this;
 }
@@ -343,35 +305,35 @@ ostream& operator<<(ostream& os, const Url& u) {
 
     if( u.has_authority() )
         os << "has_authority" << endl;
-    if( ! u._scheme.empty() )
-        os << "scheme: " << u._scheme << endl;
-    if( ! u._userinfo.empty() )
-        os << "userinfo: " << u._userinfo << endl;
-    if( ! u._host.empty() )
-        os << "host: " << u._host << endl;
-    if( ! u._port.empty() )
-        os << "port: " << u._port << endl;
+    if( ! u.m_scheme.empty() )
+        os << "scheme: " << u.m_scheme << endl;
+    if( ! u.m_userinfo.empty() )
+        os << "userinfo: " << u.m_userinfo << endl;
+    if( ! u.m_host.empty() )
+        os << "host: " << u.m_host << endl;
+    if( ! u.m_port.empty() )
+        os << "port: " << u.m_port << endl;
     if( ! u._path.empty() )
         os << "path: " << u._path << endl;
     if( u.has_query() ) {
         os << "has_query" << endl;
-        os << "query: " << u._query << endl;
+        os << "query: " << u.m_query << endl;
     }
     if( u.has_fragment() )  {
         os << "has_authority" << endl;
-        os << "fragment: " << u._fragment << endl;
+        os << "fragment: " << u.m_fragment << endl;
     }
     os << endl;
     return os;
 }
 
 void Url::normalize_scheme()  {
-    to_lower(_scheme);
+    to_lower(m_scheme);
 }
 
 
 void Url::normalize_host()  {
-    for(string::iterator i = _host.begin(); i != _host.end(); ++i) {
+    for(string::iterator i = m_host.begin(); i != m_host.end(); ++i) {
         //(*i) = tolower(*i);
         // tolower depends on locale, according to rfc 4343 we should only lowercase
         // from ascii 0x41-0x5A to 0x61-0x7A
@@ -394,7 +356,8 @@ string Url::normalize_escapes(const string& s)  {
     return res;
 }
 
-void Url::normalize_escapes() throw(runtime_error) {
+void Url::normalize_escapes()
+{
     string s = get();
     s = normalize_escapes(s);
     try {
@@ -406,7 +369,8 @@ void Url::normalize_escapes() throw(runtime_error) {
     }
 }
 
-void Url::normalize() throw(runtime_error) {
+void Url::normalize()
+{
     normalize_scheme();
     normalize_host();
     normalize_escapes();
@@ -415,15 +379,16 @@ void Url::normalize() throw(runtime_error) {
 }
 
 /***** ACCESSORS *****/
-void Url::scheme(const string& s)  throw(UrlParseError) {
+void Url::scheme(const string& s)
+{
     try {
         regex re(url_regex[RE_SCHEME]);
         if( regex_match(s,re) ) {
-            _scheme = s;
-            to_lower(_scheme);
-            //if( _scheme == "file" )
+            m_scheme = s;
+            to_lower(m_scheme);
+            //if( m_scheme == "file" )
             //    authority("/");
-            _has_authority = true;
+            m_has_authority = true;
         } else
             throw UrlParseError("scheme: " + s + " doesn't match scheme validation regex");
     } catch(regex_error re) {
@@ -438,7 +403,8 @@ void Url::scheme(const string& s)  throw(UrlParseError) {
 /**
  * authority     = [ userinfo "@" ] host [ ":" port ]
  */
-void Url::authority(const string& s) throw(UrlParseError) {
+void Url::authority(const string& s)
+{
     try {
         // [userinfo@]host[:port]
         string::size_type user_b = 0, user_e=0, host_b=0, host_e=0, port_b=0;
@@ -449,7 +415,7 @@ void Url::authority(const string& s) throw(UrlParseError) {
         }
         // IP-literal = "[" ( IPv6address / IPvFuture  ) "]"
         if(    s[host_b] == '[' ) {
-            _host_ip_literal = true;
+            m_host_ip_literal = true;
             if( ! ((++host_b) < s.size()) ) throw UrlParseError("authority incomplete host part, nothing follows \'[\': " + s);
             if( (host_e = s.find(']',host_b)) != string::npos) {
                 assert(host_e - host_b > 0 );
@@ -459,7 +425,7 @@ void Url::authority(const string& s) throw(UrlParseError) {
         } else {
             if( (host_e = s.find(':',host_b)) == string::npos) { // no ":port" follows
                 host(s.substr(host_b));
-                /* if( ! _scheme.empty() )
+                /* if( ! m_scheme.empty() )
                     set_def_port(); */
             } else {
                 if( host_e == host_b ) {
@@ -485,26 +451,27 @@ void Url::authority(const string& s) throw(UrlParseError) {
     }
 }
 
-string Url::authority() const  {
+string Url::authority() const
+{
     string result;
-    if( _host.empty() )
+    if( m_host.empty() )
         return result;
 
-    result.reserve(_userinfo.size()+_host.size()+_port.size()+3);
-    if ( ! _userinfo.empty() ) {
-        result += _userinfo;
+    result.reserve(m_userinfo.size()+m_host.size()+m_port.size()+3);
+    if ( ! m_userinfo.empty() ) {
+        result += m_userinfo;
         result += "@";
     }
-    if( _host_ip_literal ) {
+    if( m_host_ip_literal ) {
         result += '[';
-        result += _host;
+        result += m_host;
         result += ']';
     } else {
-        result += _host;
+        result += m_host;
     }
-    if ( ! _port.empty()  ) {
+    if ( ! m_port.empty()  ) {
         result += ":";
-        result += _port;
+        result += m_port;
     }
     return result;
 }
@@ -512,7 +479,7 @@ string Url::authority() const  {
 
 bool Url::empty() const
 {
-    if( ! _scheme.empty() || _has_authority || ! _path.empty() || has_query() || has_fragment() )
+    if( ! m_scheme.empty() || m_has_authority || ! _path.empty() || has_query() || has_fragment() )
         return false;
     else
         return true;
@@ -520,25 +487,27 @@ bool Url::empty() const
 
 bool Url::absolute() const
 {
-    if(  ! _scheme.empty()  )
+    if(  ! m_scheme.empty()  )
         return true;
     else
         return false;
 }
 
-void Url::userinfo(const string& s) throw(UrlParseError) {
-    _userinfo.assign(escape(s,URL_CHAR_AUTH));
+void Url::userinfo(const string& s)
+{
+    m_userinfo.assign(escape(s,URL_CHAR_AUTH));
 }
 
-void Url::host(const string& s) throw(UrlParseError) {
+void Url::host(const string& s)
+{
     // the rfc allows reg-name (host) to be escaped for non ASCII registered names
     // FIXME rfc 3490
     try {
         //string norm = escape(unescape_safe(s),URL_CHAR_AUTH); // Unescape safe on host names or not??
         string norm = escape(s,URL_CHAR_AUTH);
         if(valid_host(norm)) {
-            _host.assign(norm);
-            _has_authority = true;
+            m_host.assign(norm);
+            m_has_authority = true;
         } else
             throw UrlParseError("Url::host("+s+"): Invalid host");
     } catch(UrlParseError) {
@@ -550,11 +519,12 @@ void Url::host(const string& s) throw(UrlParseError) {
     }
 }
 
-void Url::port(const string& s) throw(UrlParseError) {
+void Url::port(const string& s)
+{
     // the rfc doesn't allow port to be escaped
     try {
         if( s.empty() ) {
-            _port.clear();
+            m_port.clear();
         } else {
             regex re(url_regex[RE_PORT]);
             if( ! regex_match(s,re) )
@@ -566,7 +536,7 @@ void Url::port(const string& s) throw(UrlParseError) {
                 throw UrlParseError("Url::port("+s+"): not an integer");
             if( ! (port < (1<<16) && port > 0) )
                 throw UrlParseError("Url::port("+s+"): out of range (0,2^16)");
-            _port.assign(s);
+            m_port.assign(s);
         }
     } catch(regex_error re) {
         throw UrlParseError("Url::port("+s+"): boost::regex_error: " + re.what());
@@ -577,12 +547,13 @@ void Url::port(const string& s) throw(UrlParseError) {
     }
 }
 
-int Url::port_int() const throw(BadUrl) {
-    if( _port.empty() )
+int Url::port_int() const
+{
+    if( m_port.empty() )
         throw BadUrl("port is empty");
     else {
         int port;
-        istringstream is(_port);
+        istringstream is(m_port);
         is >> port;
         if( is.fail() )
             throw BadUrl("port is not an integer");
@@ -592,49 +563,54 @@ int Url::port_int() const throw(BadUrl) {
     }
 }
 
-string Url::port() const {
-/*    if( _port.empty() )
-        if( _scheme == "http")
+std::string Url::port() const
+{
+/*    if( m_port.empty() )
+        if( m_scheme == "http")
             return scheme_defport[SCHEME_HTTP];
-        else if ( _scheme == "ftp")
+        else if ( m_scheme == "ftp")
             return scheme_defport[SCHEME_FTP];
-        else if ( _scheme == "file")
+        else if ( m_scheme == "file")
             return "";
         else
             return "";
     else */
-        return _port;
+        return m_port;
 }
 
-void Url::path(const string& s) throw(UrlParseError) {
+void Url::path(const string& s)
+{
     _path.assign(escape(s,URL_CHAR_PATH));
     if( has_authority() )
         _path.absolute(true);
 }
 
-void Url::query(const string& s) throw(UrlParseError) {
-    _query.assign(escape(s,URL_CHAR_QUERY));
+void Url::query(const string& s)
+{
+    m_query.assign(escape(s,URL_CHAR_QUERY));
     //_has_query = true;
 }
 
-void Url::fragment(const string& s) throw(UrlParseError) {
-    _fragment.assign(escape(s,URL_CHAR_FRAGMENT));
+void Url::fragment(const string& s)
+{
+    m_fragment.assign(escape(s,URL_CHAR_FRAGMENT));
     //_has_fragment = true;
 }
 /***** END ACCESSORS *****/
 
 // This one is a bad idea, don't use it
-void Url::set_def_port() throw(UrlParseError) {
+void Url::set_def_port()
+{
     using namespace utils;
-    if( ! _scheme.empty() ) {
+    if( ! m_scheme.empty() ) {
         if( scheme() == "http")
             port(scheme_defport[SCHEME_HTTP]);
         else if ( scheme() == "ftp")
             port(scheme_defport[SCHEME_FTP]);
         else if ( scheme() == "file")
-            _port.assign(scheme_defport[SCHEME_FILE]);
+            m_port.assign(scheme_defport[SCHEME_FILE]);
         else
-            throw UrlParseError("set_def_port: unknown default port for scheme: " + _scheme);
+            throw UrlParseError("set_def_port: unknown default port for scheme: " + m_scheme);
 
     } else
         throw UrlParseError("set_def_port: scheme is empty");
@@ -646,7 +622,7 @@ string Url::get() const {
     string res;
     res.reserve(size());
 
-    if( ! _scheme.empty() )  {
+    if( ! m_scheme.empty() )  {
         res += scheme();
         res += ":";
     }
@@ -668,10 +644,11 @@ string Url::get() const {
     return res;
 }
 
-size_t Url::size() const {
+size_t Url::size() const
+{
     size_t res = 0;
-    if( ! _scheme.empty() )  {
-        res += _scheme.size();
+    if( ! m_scheme.empty() )  {
+        res += m_scheme.size();
         ++res;//  ":";
     }
     if( has_authority() ) {
@@ -698,7 +675,8 @@ std::string Url::escape_reserved_unsafe(const std::string& s)
     return escape(s,(URL_CHAR_RESERVED|URL_CHAR_UNSAFE));
 }
 
-string Url::escape(const string& s, const unsigned char mask) {
+std::string Url::escape(const string& s, const unsigned char mask)
+{
     if(s.empty())
         return s;
     string result;
@@ -740,7 +718,8 @@ string Url::escape(const string& s, const unsigned char mask) {
     return result;
 }
 
-string Url::unescape(const string& s) {
+string Url::unescape(const string& s)
+{
     // avoid copying if there's nothing to unescape
     if( s.empty() || s.find('%') == string::npos )
         return s;
