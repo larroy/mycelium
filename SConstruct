@@ -177,6 +177,8 @@ env.ParseConfig('pkg-config liblog4cxx --cflags --libs');
 #VariantDir('build', '.')
 
 env['sources'] = SCutils.get_sources('src/sources.txt')
+env['unit_test_sources'] = utils.findall('src/unit_test', '*.cc', 1)
+print env['unit_test_sources']
 
 SConscript('src/SConscript', exports=['env'],
 variant_dir='build/{0}'.format(build), duplicate=0)

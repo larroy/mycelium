@@ -21,6 +21,7 @@ import re
 import subprocess
 import sys
 import sys
+import fnmatch
 
 
 
@@ -260,6 +261,15 @@ def xmkdir(d):
             if e.errno != 17:
                 raise
 
+
+def findall(directory, glob, remdepth=0):
+    found = list()
+    for path, dirnames, filenames in os.walk(directory):
+        for filename in fnmatch.filter(filenames, glob):
+            res = os.sep.join(re.split(os.sep, os.path.join(path, filename))[remdepth:])
+            if res:
+                found.append(res)
+    return found
 
 def main():
     """Will print plat_id and branch_name"""
