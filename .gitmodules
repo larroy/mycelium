@@ -4,3 +4,6 @@
 [submodule "3rd_party/curl"]
 	path = 3rd_party/curl
 	url = git://github.com/bagder/curl.git
+[submodule "3rd_party/mongodb"]
+	path = 3rd_party/mongodb
+	url = git://github.com/mongodb/mongo.git
