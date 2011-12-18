@@ -1,0 +1,8 @@
+*.o
+.sconsign.dblite
+*.pyc
+doc
+build
+3rd_party/c-ares_install/
+3rd_party/curl_install/
+3rd_party/libstemmer_c/stemwords
