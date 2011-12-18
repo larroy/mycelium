@@ -140,7 +140,9 @@ if (GetOption('ccache')  and GetOption('ccache') == 'yes')\
 ############################################################################
 
 includes = [
-    '.'
+    '.',
+    '3rd_party/curl/include/',
+    '3rd_party/c-ares/'
 ]
 
 libs = [
@@ -150,18 +152,21 @@ libs = [
     'boost_regex',
     'log4cxx',
     'pthread',
-    'curl',
     'event',
-    'ssl'
+    'ssl',
+    'idn'
 ]
 
 
 if not SCutils.has_option('system_curl'):
+    print 'Linking with static curl'
     curl_static = File('3rd_party/curl_install/lib/libcurl.a')
     ares_static = File('3rd_party/c-ares_install/lib/libcares.a')
-    libs.append(ares_static)
     libs.append(curl_static)
+    libs.append(ares_static)
     includes.append('3rd_party/curl_install/include/')
+else:
+    libs.append('curl')
 
 
 # Add the previous settings to the build environment
@@ -178,7 +183,7 @@ env.ParseConfig('pkg-config liblog4cxx --cflags --libs');
 
 env['sources'] = SCutils.get_sources('src/sources.txt')
 env['unit_test_sources'] = utils.findall('src/unit_test', '*.cc', 1)
-print env['unit_test_sources']
+#print env['unit_test_sources']
 
 SConscript('src/SConscript', exports=['env'],
 variant_dir='build/{0}'.format(build), duplicate=0)
