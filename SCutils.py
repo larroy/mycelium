@@ -87,6 +87,9 @@ def setup_quiet_build(env, colorblind=False):
     pch_compile = '%s[PCH]%s %s$SOURCE%s -> %s$TARGET%s' %\
        (c['bold_magenta'], c['rst'], c['bold'], c['rst'], c['bold'], c['rst'])
 
+    flex_parse = '%s[FLEX]%s %s$SOURCE%s -> %s$TARGET%s' %\
+       (c['bold_magenta'], c['rst'], c['bold'], c['rst'], c['bold'], c['rst'])
+
     env['CXXCOMSTR']   = compile_cxx_msg
     env['SHCXXCOMSTR'] = compile_shared_msg
     env['CCCOMSTR']    = compile_c_msg
@@ -96,6 +99,7 @@ def setup_quiet_build(env, colorblind=False):
     env['LINKCOMSTR']  = link_program_msg
     env['RANLIBCOMSTR']= ranlib_library_msg
     env['GCHCOMSTR'] = pch_compile
+    env['LEXCOMSTR'] = flex_parse
 
 def color_sample():
     """Show a sample of colors that will be used for SCons build"""

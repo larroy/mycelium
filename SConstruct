@@ -76,6 +76,17 @@ if SCutils.has_option('gprof_profile'):
     ccflags.append('-pg')
     linkflags.append('-pg')
 
+for k, v in ARGLIST:
+    if k == 'ccflag':
+        ccflags.append(v)
+        print '*****************\nAdding custom ccflag: {0}\nlist of current ccflags: '.format(v), ccflags,\
+            '\n****************\n'
+
+    elif k == 'define':
+        cppdefines.append(v)
+        print '****************\nAdding custom define: {0}\nlist of current defines: '.format(v), cppdefines,\
+            '\n****************\n'
+
 ############################################################################
 # Configure debug or release build environment
 #
@@ -83,6 +94,9 @@ build = GetOption('build')
 if not build:
     build = 'release'
 
+#
+# DEBUG
+#
 if build == 'debug':
     cppdefines.append('DEBUG')
 
@@ -91,6 +105,9 @@ if build == 'debug':
         '-ggdb3'
     ])
 
+#
+# RELEASE
+#
 elif build == 'release':
     if not SCutils.has_option('assert'):
         cppdefines.append('NDEBUG')
@@ -119,6 +136,9 @@ env.Decider('MD5-timestamp')
 flex_bld = env.Builder(action=bld_lex, suffix='.ll', src_suffix='.ll');
 env.Append(BUILDERS={'Flex':flex_bld})
 env.Append(LEXFLAGS=['-Cf'])
+
+# The default scons LEXCOM doesn't correlate to line numbers in the C/C++ file
+env['LEXCOM'] = '$LEX $LEXFLAGS --outfile=$TARGET $SOURCES'
 
 ############################################################################
 
