@@ -7,4 +7,5 @@ apt-get install\
  libboost-system-dev\
  libevent-dev\
  zlib1g-dev\
- flex
+ flex\
+ doxygen
