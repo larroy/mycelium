@@ -142,3 +142,9 @@ Some (might be incomplete) list of libraries that are required:
 - event
 - ssl
 
+Other software:
+
+- scons
+- flex
+- autoconf (for building curl and c-ares)
+
