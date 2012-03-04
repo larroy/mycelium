@@ -27,16 +27,6 @@ def has_option(name):
 def get_option(name):
     return GetOption(name)
 
-def get_sources(file):
-    fd = open(file, 'r')
-    sources = fd.readlines()
-    sources = map(lambda x: x.rstrip(), sources)
-    if not len(sources):
-        raise SCons.Errors.StopError('no sources in %s!' % file)
-    sources=[l for l in sources if len(l)]
-    return sources
-
-
 def setup_quiet_build(env, colorblind=False):
     """Will fill an SCons env object with nice colors and quiet build strings. Makes warnings evident."""
     # colors
@@ -63,10 +53,10 @@ def setup_quiet_build(env, colorblind=False):
        for key, value in c.iteritems():
           c[key] = ''
 
-    compile_cxx_msg = '%s[CXX]%s %s$SOURCE%s' % \
+    compile_cxx_msg = '%s[C++]%s %s$SOURCE%s' % \
        (c['blue'], c['rst'], c['yellow'], c['rst'])
 
-    compile_c_msg = '%s[CC]%s %s$SOURCE%s' % \
+    compile_c_msg = '%s[C]%s %s$SOURCE%s' % \
        (c['cyan'], c['rst'], c['yellow'], c['rst'])
 
     compile_shared_msg = '%s[SHR]%s %s$SOURCE%s' % \
@@ -87,9 +77,6 @@ def setup_quiet_build(env, colorblind=False):
     pch_compile = '%s[PCH]%s %s$SOURCE%s -> %s$TARGET%s' %\
        (c['bold_magenta'], c['rst'], c['bold'], c['rst'], c['bold'], c['rst'])
 
-    flex_parse = '%s[FLEX]%s %s$SOURCE%s -> %s$TARGET%s' %\
-       (c['bold_magenta'], c['rst'], c['bold'], c['rst'], c['bold'], c['rst'])
-
     env['CXXCOMSTR']   = compile_cxx_msg
     env['SHCXXCOMSTR'] = compile_shared_msg
     env['CCCOMSTR']    = compile_c_msg
@@ -99,7 +86,6 @@ def setup_quiet_build(env, colorblind=False):
     env['LINKCOMSTR']  = link_program_msg
     env['RANLIBCOMSTR']= ranlib_library_msg
     env['GCHCOMSTR'] = pch_compile
-    env['LEXCOMSTR'] = flex_parse
 
 def color_sample():
     """Show a sample of colors that will be used for SCons build"""
@@ -107,5 +93,28 @@ def color_sample():
     setup_quiet_build(env)
     for item in env.iteritems():
         print item[0],item[1]
+
+def get_sources(file):
+    '''Utility to read sources from text file, one source per line, no empty lines'''
+    fd = open(file, 'r')
+    sources = fd.readlines()
+    sources = map(lambda x: x.rstrip(), sources)
+    if not len(sources):
+        raise SCons.Errors.StopError('no sources in %s!' % file)
+    sources=[l for l in sources if len(l)]
+    return sources
+
+
+def find_files(dirname, regexp):
+    '''returns a list of files found in dirname matching regexp'''
+    result = []
+    for dirpath, dirnames, filenames in os.walk(dirname):
+        if re.search('\.[^/]', dirpath):
+            continue
+        for f in filenames:
+            if re.match(regexp, f):
+                full_file_path = os.path.join(dirpath, f)
+                result.append(full_file_path)
+    return result
 
 
