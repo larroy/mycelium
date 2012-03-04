@@ -168,6 +168,7 @@ Url& Url_classifier::peek(size_t num)
         //assert(table.get<n>().replace(i,t) == true);
         pair<tbl_n_idx_t::iterator,bool> p = table.get<n>().insert(t);
         assert(p.second == true);
+        (void) p;
         return t.queue->front();
     } else {
         throw runtime_error("empty");
