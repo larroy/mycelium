@@ -82,11 +82,11 @@ struct Doc : boost::noncopyable {
         FLAG_SIZE
     };
 
-    void save(mongo::DBClientConnection&);
-    bool load_url(mongo::DBClientConnection&, const Url&);
+    void save(mongo::DBClientConnection&, const std::string& ns);
+    bool load_url(mongo::DBClientConnection&, const std::string& ns, const Url&);
 
     Url            url;
-    long           http_code;
+    int            http_code;
     int            curl_code;
     std::string    curl_error;
     /// modification time in seconds since the epoch

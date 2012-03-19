@@ -69,6 +69,13 @@ def main():
     os.chdir(old_dir)
 
 
+    STAGE = 'Building mongodb...'
+    print STAGE
+    os.chdir('3rd_party/mongodb/')
+    xsystem(['scons .'])
+    os.chdir(old_dir)
+
+
     STAGE = 'Building main sources...'
     print STAGE
     xsystem(['scons', '-j{0}'.format(NPROCS)])

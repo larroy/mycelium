@@ -117,7 +117,7 @@ void remsock(SockInfo*);
 /// Assign information to a SockInfo structure and program the event in ev (curl multi interface)
 void setsock(SockInfo*, curl_socket_t, CURL*, int action, GlobalInfo*);
 
-/// Called by libevent when we get action on a multi socket 
+/// Called by libevent when we get action on a multi socket
 void multi_cb (int fd, short kind, void *userp);
 
 
@@ -228,11 +228,16 @@ public:
         EasyHandles(),
         user_agent("pn-0.2-BETA")
     {
+        const char* res = 0;
         string mongo_server = "localhost";
+        if ((res = getenv("DB_HOST")))
+            mongo_server.assign(res);
+
+        mongodb_namespace = "mycelium.crawl";
+        if ((res = getenv("DB_NAMESPACE")))
+            mongodb_namespace.assign(res);
+
         try {
-            const char* res = 0;
-            if ((res = getenv("DB_HOST")))
-                mongo_server.assign(res);
             mongodb_conn.connect(mongo_server);
         } catch(mongo::UserException& e) {
             LOG4CXX_ERROR(crawlog, fs("Error connecting to mongodb server: " << mongo_server));
@@ -286,7 +291,8 @@ public:
 
 
     mongo::DBClientConnection mongodb_conn;
-    std::string    fifo_buff;
+    std::string mongodb_namespace;
+    std::string fifo_buff;
     struct event fifo_event;
 
     struct event interactive_event;
@@ -775,7 +781,11 @@ void EasyHandle::done(CURLcode result)
     doc->curl_code = static_cast<int>(result);
     doc->curl_error.assign(curl_error);
     curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &eff_url);
-    curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, &doc->http_code);
+
+    long code;
+    curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, &code);
+    doc->http_code = code;
+
     curl_easy_getinfo(easy, CURLINFO_FILETIME, &doc->modified);
     if (headers) {
         curl_slist_free_all(headers);
@@ -830,12 +840,12 @@ void EasyHandle::done(CURLcode result)
             break;
 
         case CONTENT:
-            // Content retrieval finished, we save the document 
+            // Content retrieval finished, we save the document
             doc->url = eff_url;
             doc->url.normalize();
             doc->headers = headers_os.str();
             doc->content = content_os.str();
-            doc->save(global->mongodb_conn);
+            doc->save(global->mongodb_conn, global->mongodb_namespace);
             break;
 
         case HEAD:
@@ -853,7 +863,7 @@ void EasyHandle::done(CURLcode result)
 void EasyHandle::get_content(const Url& url)
 {
     LOG4CXX_INFO(crawlog,fs("handle id: " << id << " retrieving content: " << url.host()));
-    bool preexisting = doc->load_url(global->mongodb_conn, url);
+    bool preexisting = doc->load_url(global->mongodb_conn, global->mongodb_namespace, url);
 
     string url_string = doc->url.get();
 
