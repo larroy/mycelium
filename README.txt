@@ -38,10 +38,9 @@ $  scons --system_curl
 
 - Then execute the crawler binary and pipe urls to the crawler.fifo fifo.
 
-- The results are stored in the disk via the 'bighash' utility. The urls are
-  hashed with sha1 checksum.  And the retrieved documents are stored gzipped,
-  so it's easy to pick the results with other software. The environment
-  variable DB_DIR controls where the documents are stored.
+- The results are stored in mongodb. The environment variable DB_HOST and
+  DB_NAMESPACE controls where the documents are stored. DB_HOST is the mongodb
+  server to connect and DB_NAMESPACE is "database.collection"
 
 Example / Screenshots:
 ----------------------
@@ -74,20 +73,6 @@ down: 0.00 iB 0.00 KB/s
 2011-11-23 00:54:13,777 - INFO  crawlog - handle id: 0 DONE: http://slashdot.org/ HTTP 200
 </pre>
 
-The results are stored like:
-
-<pre>
-mycelium_db/d3/d5304d22690a893b6bc5aceb17cbfb6287adf6-0/
-├── contents.gz
-├── __key__
-└── __value__
-
-
-Where __key__ is the url, __value__ should contain the HTTP headers, and
-contents.gz is the retrieved content, if any, gzipped.
-</pre>
-
-
 Interactive commands
 --------------------
 
@@ -108,24 +93,12 @@ down: 0.00 iB 0.00 KB/s
 - status: Show the status of the internal curl handlers
 - quit: obvious
 
-
-
-
-
 Building
 ========
 
 Execute:
 
 scons
-
-
-
-The results are stored in disk directory as a 'bighash' database which
-makes it easy to access the documents downloaded.
-
-The DB_DIR environment variable controls this directory if you want to change
-the default.
 
 Dependencies
 ============
