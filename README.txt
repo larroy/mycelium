@@ -141,10 +141,29 @@ Some (might be incomplete) list of libraries that are required:
 - curl
 - event
 - ssl
+- libidn11-dev
 
 Other software:
 
 - scons
 - flex
 - autoconf (for building curl and c-ares)
+
+
+Troubleshoting
+==============
+
+AttributeError: 'SConsEnvironment' object has no attribute 'CXXFile':
+File "/home/piotr/devel/mycelium/SConstruct", line 210:
+variant_dir='build/{0}'.format(build), duplicate=0)
+File "/usr/lib/scons/SCons/Script/SConscript.py", line 614:
+return method(*args, **kw)
+File "/usr/lib/scons/SCons/Script/SConscript.py", line 551:
+return _SConscript(self.fs, *files, **subst_kw)
+File "/usr/lib/scons/SCons/Script/SConscript.py", line 260:
+exec _file_ in call_stack[-1].globals
+File "/home/piotr/devel/mycelium/src/SConscript", line 11:
+env.CXXFile(target='Robots_flex.cc',source='robots.ll')
+
+-> install flex
 

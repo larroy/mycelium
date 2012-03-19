@@ -527,6 +527,8 @@ template<typename T>void int_put(void* b, T t) {
             throw std::logic_error("digit outside [0,15] range");
     }
 
+    std::string fmt_bytes(uint64_t bytes);
+    std::string fmt_kbytes_s(double kBs);
 
 } // end namespace
 

@@ -564,6 +564,40 @@ namespace utils {
         return rmdir(basedir);
     }
 #endif
+std::string fmt_bytes(uint64_t bytes)
+{
+    int suf_i=0;
+    const char* SUFFIXES[] = {"iB","KiB","MiB","GiB","TiB","PiB"};
+    double res=bytes;
+    while( res > 1000 && suf_i <= 4) {
+        res /= 1000;
+        ++suf_i;
+    }
+    assert(suf_i <= 5);
+    ostringstream os;
+    os.precision(2);
+    os.setf(ios::fixed,ios::floatfield);
+    os << res << " " << SUFFIXES[suf_i];
+    return os.str();
+
+}
+
+std::string fmt_kbytes_s(double kBs) {
+    int suf_i=0;
+    const char* SUFFIXES[] = {"KB/s","MB/s","GB/s","TB/s","PB/s"};
+    double res=kBs;
+    while( res > 1000 && suf_i <= 3) {
+        res /= 1000;
+        ++suf_i;
+    }
+    assert(suf_i <= 4);
+    ostringstream os;
+    os.precision(2);
+    os.setf(ios::fixed,ios::floatfield);
+    os << res << " " << SUFFIXES[suf_i];
+    return os.str();
+
+}
 
 } // end namespace utils
 

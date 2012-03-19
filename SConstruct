@@ -66,6 +66,7 @@ ccflags = [
 #    '-Wno-deprecated',
     '-Winvalid-pch',
 #    '-I{0}'.format(Dir('3rd-party/boost/').get_abspath()),
+    '-I{0}'.format(Dir('3rd_party/mongodb/src/mongo/').get_abspath())
 ]
 
 linkflags = [
@@ -160,12 +161,22 @@ if (GetOption('ccache')  and GetOption('ccache') == 'yes')\
 ############################################################################
 
 includes = [
-    '.',
-    '3rd_party/curl/include/',
-    '3rd_party/c-ares/'
+    '.'
 ]
+libs = []
+if not SCutils.has_option('system_curl'):
+    print 'Linking with static curl'
+    curl_static = File('3rd_party/curl_install/lib/libcurl.a')
+    ares_static = File('3rd_party/c-ares_install/lib/libcares.a')
+    mongoclient_static = File('3rd_party/mongodb/libmongoclient.a')
+    libs.append(curl_static)
+    libs.append(ares_static)
+    libs.append(mongoclient_static)
+    includes.append(Dir('3rd_party/curl_install/include/').get_abspath())
+else:
+    libs.append('curl')
 
-libs = [
+libs.extend([
     'boost_filesystem',
     'z',
     'boost_system',
@@ -173,20 +184,13 @@ libs = [
     'log4cxx',
     'pthread',
     'event',
+    'idn',
+    'dl',
     'ssl',
-    'idn'
-]
+    'crypto'
+])
 
 
-if not SCutils.has_option('system_curl'):
-    print 'Linking with static curl'
-    curl_static = File('3rd_party/curl_install/lib/libcurl.a')
-    ares_static = File('3rd_party/c-ares_install/lib/libcares.a')
-    libs.append(curl_static)
-    libs.append(ares_static)
-    includes.append('3rd_party/curl_install/include/')
-else:
-    libs.append('curl')
 
 
 # Add the previous settings to the build environment
@@ -206,7 +210,7 @@ env['unit_test_sources'] = utils.findall('src/unit_test', '*.cc', 1)
 #print env['unit_test_sources']
 
 SConscript('src/SConscript', exports=['env'],
-variant_dir='build/{0}'.format(build), duplicate=0)
+    variant_dir='build/{0}'.format(build), duplicate=0)
 
 ############################################################################
 # install target

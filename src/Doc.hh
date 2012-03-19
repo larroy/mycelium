@@ -9,13 +9,12 @@
 #ifndef Doc_hh
 #define Doc_hh
 #include <string>
-#include <zlib.h>
 #include "Url.hh"
 #include <boost/utility.hpp>
 #include <memory>
 #include <bitset>
 #include <boost/shared_ptr.hpp>
-#include "bighash.hh"
+#include "client/dbclient.h"
 
 #define LINKSFNAME        "links.gz"
 #define CONTENTSFNAME    "contents.gz"
@@ -43,15 +42,12 @@
 #define DOC_UTF8_OK_FLAG 0x01
 
 
-const char* get_dbdir();
 /**
  * @class Doc
  * @author piotr
  * @brief Base class for documents
  * A crawled url becomes a document
- *
  */
-
 struct Doc : boost::noncopyable {
     Doc() :
         url(),
@@ -60,9 +56,6 @@ struct Doc : boost::noncopyable {
         curl_error(),
         modified(-1),
         crawled(-1),
-        content_sz(0),
-        content_fd(-1),
-        content_gz_f(NULL),
         content(),
         headers(),
         etag(),
@@ -72,12 +65,12 @@ struct Doc : boost::noncopyable {
         title(),
         rss2(),
         rss(),
-        atom(),
-        hash_bucket()
+        atom()
     {}
     //Doc(const boost::filesystem::path&);
 
-    ~Doc();
+    ~Doc()
+    {}
 
     enum {
         FLAG_EMPTY = 0,
@@ -89,36 +82,18 @@ struct Doc : boost::noncopyable {
         FLAG_SIZE
     };
 
-    void save();
-    bool load_url(const Url& url);
-    void load_leaf(const std::string& leaf);
-    std::string leaf();
-    void open_content();
-    bool is_open_content()
-    {
-        if (content_fd >= 0 || content_gz_f )
-            return true;
-        return false;
-    }
-    void unlink_content();
-    void close_content();
-
-    void lock();
-    void unlock() { hash_bucket.reset(); }
-    bool locked() { return hash_bucket ? true : false; }
+    void save(mongo::DBClientConnection&);
+    bool load_url(mongo::DBClientConnection&, const Url&);
 
     Url            url;
-    long        http_code;
+    long           http_code;
     int            curl_code;
     std::string    curl_error;
-    // modification time in seconds since the epoch
-    long        modified;
-    // in seconds since the epoch
-    long        crawled;
-    size_t        content_sz;
-    int            content_fd;
-    gzFile        content_gz_f;
-    std::string content;
+    /// modification time in seconds since the epoch
+    long           modified;
+    /// in seconds since the epoch
+    long           crawled;
+    std::string    content;
     std::string    headers;
     std::string    etag;
     int            content_type;
@@ -128,35 +103,6 @@ struct Doc : boost::noncopyable {
     std::string    rss2;
     std::string    rss;
     std::string    atom;
-
-
-private:
-    boost::shared_ptr<big_hash::big_hash_bucket> hash_bucket;
-
-
-//    void set_curl_info_http_headers(CURL* easy,CURLcode code);
-//    bool apply_index_criteria();
-//    void set_content_type();
-//    bool set_content_length();
-//
-//    /**
-//     * Docs that we want to crawl
-//     */
-//    static void headers_map(const std::string& headers, std::map<std::string,std::string>& header);
-
 };
-
-struct Doc_factory {
-    static std::auto_ptr<Doc> create_from_meta_file(const char* metaf);
-    //static Doc* create_from_url(const char* metaf);
-};
-
-
-class Less_doc{
-public:
-    bool operator()(const Doc& left, const Doc& right);
-};
-
-
 
 #endif
