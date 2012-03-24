@@ -15,12 +15,9 @@
  * The urls are classified with Url_classifier
  */
 #include <sys/time.h>
-#include <time.h>
-#include <unistd.h>
-#include <sys/poll.h>
 #include <curl/curl.h>
 #include <event.h>
-#include <fcntl.h>
+#include <fcntl.h> // O_RDWR
 #include <sys/stat.h>
 
 #include <stdio.h>
