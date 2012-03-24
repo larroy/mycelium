@@ -164,7 +164,8 @@ namespace utils {
         arglist.push_back(NULL);
 
         int fd[2];
-        pipe(fd);
+        if(pipe(fd) < 0)
+            utils::err_sys("pipe failed");
 
         int status=0;
         pid_t chld;
