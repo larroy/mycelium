@@ -66,7 +66,8 @@ ccflags = [
 #    '-Wno-deprecated',
     '-Winvalid-pch',
 #    '-I{0}'.format(Dir('3rd-party/boost/').get_abspath()),
-    '-I{0}'.format(Dir('3rd_party/mongodb/src/mongo/').get_abspath())
+    '-I{0}'.format(Dir('3rd_party/mongodb/src/mongo/').get_abspath()),
+    '-I{0}'.format(Dir('3rd_party/mongodb/src/').get_abspath())
 ]
 
 linkflags = [
