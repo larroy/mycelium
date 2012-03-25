@@ -16,6 +16,11 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+#include <sys/socket.h>
+#include <netdb.h>
+
+#define LISTENQ 1024
+
 //#include "gzstream.hh"
 
 
@@ -599,6 +604,213 @@ std::string fmt_kbytes_s(double kBs) {
     return os.str();
 
 }
+
+
+void Setsockopt(int fd, int level, int optname, const void *optval, socklen_t optlen)
+{
+    if (setsockopt(fd, level, optname, optval, optlen) < 0)
+        err_sys("setsockopt error");
+}
+
+void Listen(int fd, int backlog)
+{
+    char* ptr;
+    /*4can override 2nd argument with environment variable */
+    if ( (ptr = getenv("LISTENQ")) != NULL)
+        backlog = atoi(ptr);
+
+    if (listen(fd, backlog) < 0)
+        err_sys("listen error");
+}
+
+int Tcp_connect(const char *host, const char *serv)
+{
+    int sockfd, n;
+    struct addrinfo hints, *res, *ressave;
+    std::string error;
+
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ( (n = getaddrinfo(host, serv, &hints, &res)) != 0) {
+        error = "tcp_connect error for";
+        if( host != 0 )
+            error+= host;
+        if( serv != 0 ) {
+            error+= ":";
+            error+= serv;
+        }
+        error+= gai_strerror(n);
+        err_sys(error);
+    }
+
+    ressave = res;
+
+    do {
+        sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (sockfd < 0)
+            continue;    /* ignore this one */
+
+        if (connect(sockfd, res->ai_addr, res->ai_addrlen) == 0)
+            break;        /* success */
+
+        close(sockfd);    /* ignore this one */
+    } while ( (res = res->ai_next) != NULL);
+
+    if (res == NULL) {    /* errno set from final connect() */
+
+        error = "tcp_connect error for ";
+        if( host != 0 )
+            error+= host;
+        if( serv != 0 ) {
+            error+= ":";
+            error+= serv;
+        }
+        err_sys(error);
+    }
+
+    freeaddrinfo(ressave);
+
+    return(sockfd);
+}
+
+int Tcp_connect_retry(const char *host, const char *serv, int tries)
+{
+    int                sockfd, n;
+    struct addrinfo    hints, *res, *ressave;
+    std::string error;
+
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    while(true) {
+        if ( (n = getaddrinfo(host, serv, &hints, &res)) != 0) {
+            error = "tcp_connect error for";
+            if( host != 0 )
+                error+= host;
+            if( serv != 0 ) {
+                error+= ":";
+                error+= serv;
+            }
+            error+= gai_strerror(n);
+            err_sys(error);
+        }
+
+        ressave = res;
+        do {
+            sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+            if (sockfd < 0)
+                continue;    /* ignore this one */
+
+            if (connect(sockfd, res->ai_addr, res->ai_addrlen) == 0)
+                goto success;
+
+            close(sockfd);    /* ignore this one */
+        } while ( (res = res->ai_next) != NULL);
+
+        if (res == NULL) {    /* errno set from final connect() */
+            error = "tcp_connect error for ";
+            if( host != 0 )
+                error+= host;
+            if( serv != 0 ) {
+                error+= ":";
+                error+= serv;
+            }
+            //err_sys(error);
+            std::clog <<  error << std::endl;
+            std::clog << "Waiting 1 seconds for retry..." << std::endl;
+        }
+        if( tries > 0)
+            --tries;
+        else if(tries == 0)
+            err_sys(error);
+        // for tries < 0 we loop forever
+        sleep(1);
+    }
+success:
+    freeaddrinfo(ressave);
+
+    return(sockfd);
+}
+
+int Tcp_listen(const char *host, const char *serv, socklen_t *addrlenp)
+{
+    int listenfd, n;
+    const int on = 1;
+    struct addrinfo hints, *res, *ressave;
+    std::string error;
+
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_flags = AI_PASSIVE;
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ( (n = getaddrinfo(host, serv, &hints, &res)) != 0) {
+
+        error = "tcp_listen error for";
+        if( host != 0 )
+            error+= host;
+        if( serv != 0 )
+            error+= serv;
+        error+= gai_strerror(n);
+        err_sys(error);
+    }
+
+    ressave = res;
+
+    do {
+        listenfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (listenfd < 0)
+            continue;        /* error, try next one */
+
+        Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+        if (bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
+            break;            /* success */
+
+        close(listenfd);    /* bind error, close and try next one */
+    } while ( (res = res->ai_next) != NULL);
+
+    if (res == NULL) {    /* errno from final socket() or bind() */
+        error = "tcp_listen error for";
+        if( host != 0 )
+            error+= host;
+        if( serv != 0 )
+            error+= serv;
+        err_sys(error);
+    }
+
+    Listen(listenfd, LISTENQ);
+
+    if (addrlenp)
+        *addrlenp = res->ai_addrlen;    /* return size of protocol address */
+
+    freeaddrinfo(ressave);
+
+    return(listenfd);
+}
+/* end tcp_listen */
+
+int Accept(int fd, struct ::sockaddr *sa, socklen_t *salenptr)
+{
+    int n;
+
+again:
+    if ( (n = accept(fd, sa, salenptr)) < 0) {
+#ifdef  EPROTO
+        if (errno == EPROTO || errno == ECONNABORTED)
+#else
+        if (errno == ECONNABORTED)
+#endif
+            goto again;
+        if(errno == EAGAIN)
+            return(n);
+        else
+            err_sys("accept");
+    }
+    return(n);
+}
+
 
 } // end namespace utils
 

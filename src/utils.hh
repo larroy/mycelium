@@ -530,6 +530,28 @@ template<typename T>void int_put(void* b, T t) {
     std::string fmt_bytes(uint64_t bytes);
     std::string fmt_kbytes_s(double kBs);
 
+    void Setsockopt(int fd, int level, int optname, const void *optval, socklen_t optlen);
+
+
+    void Listen(int fd, int backlog);
+
+
+    int Accept(int fd, struct sockaddr *sa, socklen_t *salenptr);
+
+    int Tcp_listen(const char *host, const char *serv, socklen_t *addrlenp);
+
+    /**
+     * @param host Host to connect to
+     * @param serv Service or port
+     */
+    int Tcp_connect(const char *host, const char *serv);
+
+    /**
+     * @param host Host to connect to
+     * @param serv Service or port
+     */
+    int Tcp_connect_retry(const char *host, const char *serv, int tries);
+
 } // end namespace
 
 /// Formatted string, allows to use stream operators and returns a std::string with the resulting format

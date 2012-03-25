@@ -11,7 +11,6 @@
  * @{
  * @brief utility for retrieving documents via http
  * @details Uses libevent and asynchronous IO
- * Running: start the program and pipe "http://" urls into crawler.fifo
  * The urls are classified with Url_classifier
  */
 #include <sys/time.h>
@@ -29,6 +28,7 @@
 #include <stdexcept>
 
 #include <boost/tokenizer.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
 
 #include <log4cxx/logger.h>
 #include <log4cxx/basicconfigurator.h>
@@ -80,9 +80,6 @@ int sock_cb(CURL *e, curl_socket_t s, int what, void *cbp, void *sockp);
 /// Update the event timer after curl_multi library calls
 int multi_timer_cb(CURLM *multi, long timeout_ms, GlobalInfo *g);
 
-/// ev callback for events in the fifo for URLs
-int init_fifo (GlobalInfo *g);
-
 /// CURLMOPT_TIMERFUNCTION callback
 void timer_cb(int fd, short kind, void *userp);
 
@@ -103,8 +100,9 @@ int progress_cb (void* p, double dltotal, double dlnow, double ult, double uln);
 /// callback for interactive / console control
 void on_read_interactive_cb(int fd, short ev, void* arg);
 
-/// This gets called whenever data is received from the fifo
-void fifo_cb(int fd, short event, void* arg);
+void accept_cb(int fd, short event, void* arg);
+void connection_read_cb(int fd, short event, void* arg);
+void connection_write_cb(int fd, short event, void* arg);
 
 /// Initialize a new SockInfo structure (curl multi interface)
 void addsock(curl_socket_t, CURL*, int action, GlobalInfo*);
@@ -206,14 +204,58 @@ private:
 
 /// Global information, common to all connections
 class GlobalInfo {
+public:
+    struct Connection : boost::noncopyable {
+        Connection(GlobalInfo* globalInfo, socklen_t socklen):
+            m_globalInfo(globalInfo),
+            m_fd(-1),
+            m_socklen(socklen),
+            m_input_buff(),
+            m_host(),
+            m_serv()
+        {
+            assert(globalInfo);
+            m_sa = reinterpret_cast<struct sockaddr*>(new uint8_t[socklen]());
+            cout << "Connection: " << m_sa << endl;
+
+            memset(&m_read_event, 0, sizeof(struct event));
+            memset(&m_write_event, 0, sizeof(struct event));
+        }
+
+        ~Connection()
+        {
+            cout << m_sa << "~" << endl;
+            delete[](m_sa);
+            if (m_fd > 0)
+                close(m_fd);
+        }
+
+        bool accept(int, short);
+
+        void process_input_buff(bool flush = false);
+
+        GlobalInfo* m_globalInfo;
+        int m_fd;
+        socklen_t m_socklen;
+        struct sockaddr* m_sa;
+        struct event m_read_event;
+        struct event m_write_event;
+        std::string m_input_buff;
+        std::string m_host;
+        std::string m_serv;
+    };
+
+
 private:
     GlobalInfo(const GlobalInfo&);
     void operator=(const GlobalInfo&);
-
 public:
     GlobalInfo() :
         mongodb_conn(),
-        fifo_buff(),
+        mongodb_namespace("mycelium.crawl"),
+        connections(),
+        m_listen_sock(-1),
+        m_listen_addrlen(0),
         interactive_buff(),
         //multi(curl_multi_init())
         dl_bytes(0),
@@ -227,11 +269,10 @@ public:
     {
         const char* res = 0;
         string mongo_server = "localhost";
-        if ((res = getenv("DB_HOST")))
+        if ((res = getenv("CRAWLER_DB_HOST")))
             mongo_server.assign(res);
 
-        mongodb_namespace = "mycelium.crawl";
-        if ((res = getenv("DB_NAMESPACE")))
+        if ((res = getenv("CRAWLER_DB_NAMESPACE")))
             mongodb_namespace.assign(res);
 
         try {
@@ -241,7 +282,7 @@ public:
             exit(EXIT_FAILURE);
         }
 
-        memset(&fifo_event, 0, sizeof(struct event));
+        memset(&accept_event, 0, sizeof(struct event));
         memset(&interactive_event, 0, sizeof(struct event));
         memset(&timer_event, 0, sizeof(struct event));
         multi = curl_multi_init();
@@ -258,7 +299,7 @@ public:
         for(size_t i=0; i<NUMHANDLES; ++i)
             EasyHandles.push_back(new EasyHandle(this,i));
 
-        init_fifo(this);
+        listen();
         evtimer_set(&timer_event, timer_cb, this);
         evtimer_set(&scheduler_event, scheduler_cb, this);
 
@@ -281,7 +322,8 @@ public:
 
         curl_multi_cleanup(multi);
     }
-    void process_fifo_buff(bool flush=false);
+
+    void listen();
     void check_run_count();
     /// call reschedule on IDLE easy handles
     void reschedule();
@@ -289,9 +331,10 @@ public:
 
     mongo::DBClientConnection mongodb_conn;
     std::string mongodb_namespace;
-    std::string fifo_buff;
-    struct event fifo_event;
-
+    boost::ptr_map<int, Connection> connections;
+    int m_listen_sock;
+    socklen_t m_listen_addrlen;
+    struct event accept_event;
     struct event interactive_event;
     std::string interactive_buff;
     void interactive_process(bool flush=false);
@@ -382,34 +425,6 @@ int multi_timer_cb(CURLM *multi, long timeout_ms, GlobalInfo *g)
   return 0;
 }
 
-
-/// Create a named pipe and tell libevent to monitor it
-int init_fifo (GlobalInfo* g)
-{
-    struct stat st;
-    static const char* fifo = "crawler.fifo";
-    int sockfd;
-    if (lstat(fifo, &st) == 0) {
-        if ((st.st_mode & S_IFMT) == S_IFREG) {
-            errno = EEXIST;
-            perror("lstat");
-            exit(1);
-        }
-    }
-    unlink (fifo);
-    if (mkfifo(fifo, 0600) == -1) {
-        perror("mkfifo");
-        exit (1);
-    }
-    sockfd = open (fifo, O_RDWR | O_NONBLOCK, 0);
-    if (sockfd == -1) {
-        perror("open");
-        exit(1);
-    }
-    event_set(&g->fifo_event, sockfd, EV_READ | EV_PERSIST, fifo_cb, g);
-    event_add(&g->fifo_event, NULL);
-    return (0);
-}
 
 
 /// Called by libevent when our timeout expires
@@ -576,22 +591,78 @@ void on_read_interactive_cb(int fd, short ev, void *arg)
     }
 }
 
-
-void fifo_cb(int fd, short event, void *arg)
+void accept_cb(int listen_sock, short event, void *arg)
 {
-    GlobalInfo *g = (GlobalInfo *)arg;
+    GlobalInfo* globalInfo = static_cast<GlobalInfo*>(arg);
+    std::auto_ptr<GlobalInfo::Connection> connection(new GlobalInfo::Connection(globalInfo, globalInfo->m_listen_addrlen));
+    if (connection->accept(listen_sock, event)) {
+        if (globalInfo->connections.erase(connection->m_fd)) {
+            LOG4CXX_WARN(crawlog, fs("stale connection on: " << connection->m_fd));
+            event_del(&connection->m_read_event);
+        }
+        int fd = connection->m_fd;
+        globalInfo->connections.insert(fd, connection);
+    }
+}
+
+bool GlobalInfo::Connection::accept(int listen_sock, short event)
+{
+    m_fd = utils::Accept(listen_sock, m_sa, &m_socklen); 
+    if (m_socklen > m_globalInfo->m_listen_addrlen)
+        utils::err_sys("accept_cb: accept sockaddr len truncated");
+    if (m_fd < 0) {
+        assert(errno == EAGAIN);
+    } else if (m_fd > FD_SETSIZE) {
+        LOG4CXX_ERROR(crawlog, fs("fd > FD_SETSIZE (" << FD_SETSIZE << ")"));
+        close(m_fd);
+    } else {
+        char host[NI_MAXHOST], serv[NI_MAXSERV];
+
+        if( getnameinfo(m_sa, m_socklen, host, NI_MAXHOST , serv, NI_MAXSERV, NI_NUMERICHOST) >= 0 ) {
+            LOG4CXX_INFO(crawlog, fs("connection from: " << host << ":" << serv));
+            m_host.assign(host);
+            m_serv.assign(serv);
+        }
+
+        event_set (&m_read_event, m_fd, EV_READ | EV_PERSIST, connection_read_cb, this);
+        event_add (&m_read_event, NULL);
+
+        //event_set (&m_write_event, m_fd, EV_WRITE | EV_PERSIST, connection_write_cb, this);
+        //event_add (&m_write_event, NULL);
+        return true;
+    }
+    return false;
+}
+
+void connection_write_cb(int fd, short event, void *arg)
+{
+}
+
+void connection_read_cb(int fd, short event, void *arg)
+{
+    GlobalInfo::Connection* connection = static_cast<GlobalInfo::Connection*>(arg);
     char b[BSIZE];
     ssize_t cnt;
     cnt = read(fd, b, BSIZE);
-    //cerr << "fifo read: " << cnt << endl;
-    if( cnt == 0 ) {
-        //new_conn
-        g->process_fifo_buff(true);
+    //cerr << "input read: " << cnt << endl;
+    if(cnt == 0) { 
+        // EOF
+        // flush remaining buffers
+        //
+        LOG4CXX_INFO(crawlog, fs("connection from: " << connection->m_host << ":" << connection->m_serv << " closed"));
+        connection->process_input_buff(true);
+
+        // Connection is destroyed here
+        connection->m_globalInfo->connections.erase(connection->m_fd);
+        event_del(&connection->m_read_event);
+        //event_del(connection->m_read_event);
+        return;
+
     } else if (cnt < 0) {
-        utils::err_sys("fifo read error");
+        utils::err_sys("connection_read_cb: read error");
     } else {
-        g->fifo_buff.append(b, cnt);
-        g->process_fifo_buff();
+        connection->m_input_buff.append(b, cnt);
+        connection->process_input_buff();
     }
 }
 
@@ -916,6 +987,19 @@ void EasyHandle::get_content(const Url& url)
     mcode_or_die("get_content: curl_multi_add_handle", rc);
 }
 
+void GlobalInfo::listen()
+{
+    string port("1024");
+    const char* eport = getenv("CRAWLER_PORT");
+    if (eport)
+        port.assign(eport);
+    m_listen_sock = utils::Tcp_listen(0, port.c_str(), &m_listen_addrlen);
+    event_set(&accept_event, m_listen_sock, EV_READ | EV_PERSIST, accept_cb, this);
+    event_add(&accept_event, NULL);
+}
+
+
+
 
 void GlobalInfo::reschedule()
 {
@@ -976,24 +1060,24 @@ void GlobalInfo::check_run_count ()
 
 
 
-void GlobalInfo::process_fifo_buff(bool flush)
+void GlobalInfo::Connection::process_input_buff(bool flush)
 {
-    if( fifo_buff.empty() )
+    if( m_input_buff.empty() )
         return;
 
     size_t tortoise=0;
     size_t hare=0;
-    while( (hare=fifo_buff.find_first_of("\n\r", tortoise)) != string::npos ) {
+    while( (hare=m_input_buff.find_first_of("\n\r", tortoise)) != string::npos ) {
         if( hare > tortoise+1 ) { // avoid runs of separators
-            string line = fifo_buff.substr(tortoise, hare - tortoise);
-            //LOG4CXX_DEBUG(crawlog,fs("fifo read line: " << line));
+            string line = m_input_buff.substr(tortoise, hare - tortoise);
+            //LOG4CXX_DEBUG(crawlog,fs("read line: " << line));
             try {
                 Url url(line);
                 //cout << "url: " << url << endl;
                 //LOG4CXX_INFO(crawlog,fs("read url: " << url.get()));
                 // TODO only accept http scheme
                 if( url.absolute() && url.scheme() == "http" )
-                    classifier.push(url);
+                    m_globalInfo->classifier.push(url);
                 else
                     LOG4CXX_WARN(crawlog,fs("non-http scheme, ignoring " << url.to_string() << endl));
 
@@ -1003,43 +1087,28 @@ void GlobalInfo::process_fifo_buff(bool flush)
         }
         tortoise = ++hare;
     }
-    if(flush && tortoise < fifo_buff.size()) {
+    if(flush && tortoise < m_input_buff.size()) {
         // process from tortoise
-        string line = fifo_buff.substr(tortoise);
+        string line = m_input_buff.substr(tortoise);
         if( line.empty() )
             return;
 
-        LOG4CXX_DEBUG(crawlog,fs("fifo flush line: " << line));
+        LOG4CXX_DEBUG(crawlog,fs("flush line: " << line));
         try {
             Url url(line);
             //cout << "url: " << url << endl;
             LOG4CXX_DEBUG(crawlog,fs("read url: " << url.get()));
-            classifier.push(url);
+            m_globalInfo->classifier.push(url);
         } catch(UrlParseError& e) {
             LOG4CXX_ERROR(crawlog,fs("url parse error: " << line << " : " << e.what() ));
         }
-        fifo_buff.clear();
-    } else if(tortoise < fifo_buff.size()) {
-        fifo_buff =    fifo_buff.substr(tortoise);
+        m_input_buff.clear();
+    } else if(tortoise < m_input_buff.size()) {
+        m_input_buff =    m_input_buff.substr(tortoise);
     } else {
-        fifo_buff.clear();
+        m_input_buff.clear();
     }
 
-//    typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-//    boost::char_separator<char> nl_cr("\n\r");
-//    tokenizer tokens(g->fifo_buff, nl_cr);
-//    for (tokenizer::iterator i=tokens.begin(); i != tokens.end(); ++i) {
-//        LOG4CXX_DEBUG(crawlog,fs("fifo read line: " << *i));
-//        try {
-//            Url url(*i);
-//            //cout << "url: " << url << endl;
-//            LOG4CXX_INFO(crawlog,fs("read url: " << url.get()));
-//            g->classifier.push(url);
-//        } catch(UrlParseError& e) {
-//            cerr << "UrlParseError: " << e.what() << endl;
-//        }
-//    }
-//    g->fifo_buff.clear();
 }
 
 
