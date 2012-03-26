@@ -17,12 +17,21 @@ http://www.kegel.com/c10k.html).
 It handles robots.txt. It mantains a single session per dns host, so it can
 crawl thousands of hosts in parallel without hammering the same host.
 
-It listens on a tcp socket for urls to crawl.
+It listens on a tcp socket for urls to crawl. (By default port 1024)
 
 It saves the crawled documents to mongodb.
 
 It's highly recommended to use curl compiled with asyncrhonous DNS (libares),
 otherwise DNS resolving inside curl will block the program.
+
+For the impatient
+-----------------
+$ ./bootstrap.sh
+$ ./build.py
+$ scons
+$ build/release/crawler
+$ echo 'http://google.com' | nc localhost 1024
+
 
 How to use it
 -------------
