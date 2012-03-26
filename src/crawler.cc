@@ -265,7 +265,7 @@ public:
         still_running(0),
         classifier(parallel),
         EasyHandles(),
-        user_agent("pn-0.2-BETA"),
+        user_agent("mycelium web crawler - https://github.com/larroy/mycelium"),
         connections(),
         m_parallel(parallel),
         m_port(port)
@@ -459,7 +459,7 @@ void scheduler_cb(int fd, short kind, void *userp)
     g->dl_bytes_prev = g->dl_bytes;
     g->dl_prev_sample = utils::timer::current();
 
-    cout << "down: " << utils::fmt_bytes(g->dl_bytes) << " " << utils::fmt_kbytes_s(kBs) << endl;
+    cout << "Downloaded: " << utils::fmt_bytes(g->dl_bytes) << " rate: " << utils::fmt_kbytes_s(kBs) << endl;
     if (quit_program)
         //throw runtime_error("quit_program");
         event_loopbreak();
