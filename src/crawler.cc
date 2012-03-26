@@ -42,8 +42,7 @@
 //#include "Doc_store.hh"
 #include "timer.hh"
 
-/// Number of concurrent retrievals to run
-#define NUMHANDLES 20
+
 /// Bytes/s
 #define LOW_SPEED_LIMIT 1024
 /// Seconds for the conn to be below LOW_SPEED_LIMIT
@@ -59,6 +58,8 @@
         if ( curl_easy_setopt((HANDLE), (OPTION), (PARAM)) != CURLE_OK  )\
             throw std::runtime_error("curl_easy_setopt failed");\
     } while(0);
+
+static const size_t PARALLEL_DEFAULT = 20;
 
 using namespace std;
 
@@ -250,7 +251,7 @@ private:
     GlobalInfo(const GlobalInfo&);
     void operator=(const GlobalInfo&);
 public:
-    GlobalInfo() :
+    GlobalInfo(size_t parallel, const std::string& port) :
         mongodb_conn(),
         mongodb_namespace("mycelium.crawl"),
         m_listen_sock(-1),
@@ -262,10 +263,12 @@ public:
         dl_prev_sample(utils::timer::current()),
         prev_running(0),
         still_running(0),
-        classifier(NUMHANDLES),
+        classifier(parallel),
         EasyHandles(),
         user_agent("pn-0.2-BETA"),
-        connections()
+        connections(),
+        m_parallel(parallel),
+        m_port(port)
     {
         const char* res = 0;
         string mongo_server = "localhost";
@@ -295,8 +298,8 @@ public:
         curl_multi_setopt(multi, CURLMOPT_TIMERFUNCTION, multi_timer_cb);
         curl_multi_setopt(multi, CURLMOPT_TIMERDATA, this);
 
-        EasyHandles.reserve(NUMHANDLES);
-        for(size_t i=0; i<NUMHANDLES; ++i)
+        EasyHandles.reserve(m_parallel);
+        for(size_t i = 0; i < m_parallel; ++i)
             EasyHandles.push_back(new EasyHandle(this,i));
 
         listen();
@@ -316,7 +319,7 @@ public:
 
     ~GlobalInfo()
     {
-        for(size_t i=0; i<NUMHANDLES; ++i)
+        for(size_t i = 0; i < m_parallel; ++i)
             delete EasyHandles[i];
 
         curl_multi_cleanup(multi);
@@ -358,6 +361,8 @@ public:
     std::string user_agent;
     //int rate_limit;
     boost::ptr_map<int, Connection> connections;
+    size_t m_parallel;
+    std::string m_port;
 };
 
 
@@ -600,12 +605,13 @@ void accept_cb(int listen_sock, short event, void *arg)
         int fd = connection->m_fd;
         pair<boost::ptr_map<int, GlobalInfo::Connection>::iterator, bool> res = globalInfo->connections.insert(fd, connection);
         assert(res.second);
+        (void) res;
     }
 }
 
 bool GlobalInfo::Connection::accept(int listen_sock, short event)
 {
-    m_fd = utils::Accept(listen_sock, m_sa, &m_socklen); 
+    m_fd = utils::Accept(listen_sock, m_sa, &m_socklen);
     if (m_socklen > m_globalInfo->m_listen_addrlen)
         utils::err_sys("accept_cb: accept sockaddr len truncated");
     if (m_fd < 0) {
@@ -648,7 +654,7 @@ void connection_read_cb(int fd, short event, void *arg)
     ssize_t cnt;
     cnt = read(fd, b, BSIZE);
     //cerr << "input read: " << cnt << endl;
-    if(cnt == 0) { 
+    if(cnt == 0) {
         // EOF
         // flush remaining buffers
         //
@@ -731,7 +737,7 @@ void log_cb(int severity, const char *s)
         case _EVENT_LOG_DEBUG:
             LOG4CXX_DEBUG(crawlog, s);
             break;
-        
+
         case _EVENT_LOG_MSG:
             LOG4CXX_INFO(crawlog, s);
             break;
@@ -1013,11 +1019,8 @@ void EasyHandle::get_content(const Url& url)
 
 void GlobalInfo::listen()
 {
-    string port("1024");
-    const char* eport = getenv("CRAWLER_PORT");
-    if (eport)
-        port.assign(eport);
-    m_listen_sock = utils::Tcp_listen(0, port.c_str(), &m_listen_addrlen);
+    m_listen_sock = utils::Tcp_listen(0, m_port.c_str(), &m_listen_addrlen);
+    LOG4CXX_INFO(crawlog, fs("Listening on port " << m_port));
     event_set(&accept_event, m_listen_sock, EV_READ | EV_PERSIST, accept_cb, this);
     event_add(&accept_event, NULL);
 }
@@ -1181,7 +1184,7 @@ void GlobalInfo::interactive_cmd(const std::string& cmd)
 {
     if( cmd == "qlen" ) {
         cout << "Parent queue len: " << classifier.q_len_top() << endl;
-        for(size_t i=0; i<NUMHANDLES; ++i)
+        for(size_t i = 0; i < m_parallel; ++i)
             cout << "child queue " << i << " len: " << classifier.q_len(i) << endl;
         cout << endl;
     } else if (cmd == "dumpq") {
@@ -1202,29 +1205,45 @@ void GlobalInfo::interactive_cmd(const std::string& cmd)
 } // end anon ns
 
 int main(int argc, char **argv)
-{
-    try {
-        log4cxx::BasicConfigurator::configure();
-        log4cxx::PropertyConfigurator::configure("log.cfg");
+try {
+    log4cxx::BasicConfigurator::configure();
+    log4cxx::PropertyConfigurator::configure("log.cfg");
 
-        LOG4CXX_INFO(crawlog,fs("Initializing system..."));
-        LOG4CXX_DEBUG(crawlog,fs("debug info enabled"));
+    LOG4CXX_INFO(crawlog,fs("Initializing system..."));
+    LOG4CXX_DEBUG(crawlog,fs("debug info enabled"));
 
-        if (signal(SIGINT, sigint_handler) == SIG_ERR)
-            utils::err_sys("signal");
+    if (signal(SIGINT, sigint_handler) == SIG_ERR)
+        utils::err_sys("signal");
 
-        event_init();
-        GlobalInfo g;
-        event_set_log_callback(log_cb);
-        event_dispatch();
-    } catch(std::exception& e) {
-        cerr << "main: caught exception: " << e.what() << endl;
-        throw;
-    } catch(...) {
-        cerr << "main: caught exception ..." << endl;
-        throw;
-    }
+    const char* res = 0;
+    int parallel = PARALLEL_DEFAULT;
+    if ((res = getenv("CRAWLER_PARALLEL")))
+        parallel = atoi(res);
+
+    if (parallel <= 0)
+        throw std::runtime_error(fs("CRAWLER_PARALLEL can't be negative or 0"));
+
+    string port("1024");
+    if ((res = getenv("CRAWLER_PORT")))
+        port.assign(res);
+
+
+    LOG4CXX_INFO(crawlog,fs("Starting " << parallel << " crawlers"));
+
+    event_init();
+    GlobalInfo g(static_cast<size_t>(parallel), port);
+    event_set_log_callback(log_cb);
+    event_dispatch();
     return EXIT_SUCCESS;
+
+} catch(std::exception& e) {
+    cerr << "main: caught exception: " << e.what() << endl;
+    throw;
+
+} catch(...) {
+    cerr << "main: caught exception ..." << endl;
+    throw;
+
 }
 
 /** @} */
