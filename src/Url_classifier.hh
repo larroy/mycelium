@@ -30,7 +30,7 @@
 namespace mi = boost::multi_index;
 
 /// Comparison function for the priority queue
-class Less_url {
+class Compare_hostname {
 public:
     bool operator()(const Url& left, const Url& right);
 };
@@ -130,7 +130,7 @@ private:
 
 
     //boost::shared_ptr<std::deque<Url> > top_q;
-    std::priority_queue<Url, std::deque<Url>, Less_url> top_q;
+    std::priority_queue<Url, std::deque<Url>, Compare_hostname> top_q;
     table_t table;
 
     friend std::ostream& operator<<(std::ostream& os, const Url_classifier& u);

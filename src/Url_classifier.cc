@@ -62,34 +62,30 @@ void Url_classifier::push(const Url& u)
 {
     tbl_host_idx_t::iterator i;
     if( (i = table.get<host>().find(u.host())) != table.get<host>().end() ) {
-        // an elemt with this h exists, put it in that q
-        //cout << "push in q: " << i->n << endl;
+        // a queue with this hostname exists, put it there
         i->queue->push_back(u);
+
     } else {
+        // if we have some empty child queue put it there
         for(tbl_seq_idx_t::iterator j = table.get<seq>().begin(); j != table.get<seq>().end(); ++j) {
             if( j->queue->empty()) {
                 table_elmt_t t(*j);
                 t.host = u.host();
                 t.queue->push_back(u);
-                assert(table.get<seq>().replace(j,t) == true);
+                bool res = table.get<seq>().replace(j,t);
+                assert(res);
+                (void) res;
                 return;
             }
         }
 
-        // put it in that top_q
-        //cout << "push in top_q" << endl;
+        // otherwise put it in top_q
         top_q.push(u);
     }
 }
 
 ostream& operator<<(ostream& os, const Url_classifier& u)
 {
-//    std::priority_queue<Url, std::deque<Url> >::iterator ti;
-//    os << "top_q: " << endl;
-//    for( ti = top_q.begin(); ti != top_q.end(); ++ti) {
-//        os << "\t" << (*ti).get() << endl;
-//    }
-
     Url_classifier::tbl_n_idx_t::iterator i;
     std::deque<Url>::iterator qi;
     os << "-------------" << endl;
@@ -104,20 +100,10 @@ ostream& operator<<(ostream& os, const Url_classifier& u)
     return os;
 }
 
-//static bool less_for_uinfo(const Url& left, const Url& right)
-////static bool Url_classifier::less_for_uinfo(const Url& left, const Url& right)
-//{
-//    return left.host() < right.host();
-//
-//}
-
-bool Less_url::operator()(const Url& left, const Url& right)
-//static bool Url_classifier::less_for_uinfo(const Url& left, const Url& right)
+bool Compare_hostname::operator()(const Url& left, const Url& right)
 {
     return left.host() < right.host();
-
 }
-
 
 void Url_classifier::pop(size_t num)
 {
@@ -150,15 +136,15 @@ Url& Url_classifier::peek(size_t num)
                 t.queue->push_back(top_q.top());
                 top_q.pop();
             }
-            assert(table.get<n>().replace(i,t) == true);
+            bool res = table.get<n>().replace(i,t);
+            assert(res);
+            (void) res;
             return t.queue->front();
         } else {
             return i->queue->front();
         }
     } else if(! top_q.empty()) {
-        //cout << "new q n: " << num << endl;
         table_elmt_t t(num);
-
 
         t.host = top_q.top().host();
         while( ! top_q.empty() && top_q.top().host() == t.host ) {
