@@ -36,11 +36,14 @@ $  scons --system_curl
   and block. So it's  not recommended unless curl has been compiled with
   c-ares, as it will be done by build.py
 
-- Then execute the crawler binary and pipe urls to the crawler.fifo fifo.
+Running
+-------
 
-- The results are stored in mongodb. The environment variable DB_HOST and
-  DB_NAMESPACE controls where the documents are stored. DB_HOST is the mongodb
-  server to connect and DB_NAMESPACE is "database.collection"
+- The crawler is configured with environment variables:
+    CRAWLER_PORT: port to listen for urls
+    CRAWLER_PARALLEL: number of parallel crawlers to run
+    CRAWLER_DB_HOST: mongodb host for storing the documents, default is "localhost"
+    CRAWLER_DB_NAMESPACE: database.collection, defaults to "mycelium.crawl"
 
 Example / Screenshots:
 ----------------------
@@ -58,10 +61,10 @@ down: 0.00 iB 0.00 KB/s
 The status gets printed every few seconds, displaying the total amount
 downloaded and the current download speed.
 
-Now you can start downloading urls by piping to the crawler.fifo as in:
+Now you can start downloading urls by sending them to the control socket:
 
 <code>
-echo 'http://slashdot.org' > crawler.fifo
+zcat feeds.txt.gz | nc localhost 1024
 </code>
 
 
@@ -138,5 +141,5 @@ exec _file_ in call_stack[-1].globals
 File "/home/piotr/devel/mycelium/src/SConscript", line 11:
 env.CXXFile(target='Robots_flex.cc',source='robots.ll')
 
--> install flex
+To solve this problem make sure flex is installed.
 
