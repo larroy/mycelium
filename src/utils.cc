@@ -765,7 +765,7 @@ int Tcp_listen(const char *host, const char *serv, socklen_t *addrlenp)
             continue;        /* error, try next one */
 
         Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-        if (bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
+        if (::bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
             break;            /* success */
 
         close(listenfd);    /* bind error, close and try next one */

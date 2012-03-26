@@ -61,6 +61,7 @@ if SCutils.has_option('glibcxx_debug'):
 
 
 ccflags = [
+    '-std=c++0x',
     '-Wall',
     '-march=native',
 #    '-Wno-deprecated',

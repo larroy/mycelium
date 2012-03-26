@@ -53,6 +53,7 @@
 
 /// default size for buffers
 #define BSIZE    8192
+#include <dmalloc.h>
 
 #define my_curl_easy_setopt(HANDLE, OPTION, PARAM) do{\
         if ( curl_easy_setopt((HANDLE), (OPTION), (PARAM)) != CURLE_OK  )\
@@ -215,19 +216,18 @@ public:
             m_serv()
         {
             assert(globalInfo);
-            m_sa = reinterpret_cast<struct sockaddr*>(new uint8_t[socklen]());
-            cout << "Connection: " << m_sa << endl;
-
+            m_sa = static_cast<struct sockaddr*>(operator new(socklen));
             memset(&m_read_event, 0, sizeof(struct event));
             memset(&m_write_event, 0, sizeof(struct event));
         }
 
         ~Connection()
         {
-            cout << m_sa << "~" << endl;
-            delete[](m_sa);
+            event_del(&m_read_event);
             if (m_fd > 0)
-                close(m_fd);
+                if (close(m_fd) < 0)
+                    utils::err_sys("close");
+            operator delete(m_sa);
         }
 
         bool accept(int, short);
@@ -253,7 +253,6 @@ public:
     GlobalInfo() :
         mongodb_conn(),
         mongodb_namespace("mycelium.crawl"),
-        connections(),
         m_listen_sock(-1),
         m_listen_addrlen(0),
         interactive_buff(),
@@ -265,7 +264,8 @@ public:
         still_running(0),
         classifier(NUMHANDLES),
         EasyHandles(),
-        user_agent("pn-0.2-BETA")
+        user_agent("pn-0.2-BETA"),
+        connections()
     {
         const char* res = 0;
         string mongo_server = "localhost";
@@ -312,7 +312,6 @@ public:
 
         event_set (&interactive_event, STDIN_FILENO, EV_READ | EV_PERSIST, on_read_interactive_cb, this);
         event_add (&interactive_event, NULL);
-
     }
 
     ~GlobalInfo()
@@ -331,7 +330,6 @@ public:
 
     mongo::DBClientConnection mongodb_conn;
     std::string mongodb_namespace;
-    boost::ptr_map<int, Connection> connections;
     int m_listen_sock;
     socklen_t m_listen_addrlen;
     struct event accept_event;
@@ -359,7 +357,7 @@ public:
 
     std::string user_agent;
     //int rate_limit;
-
+    boost::ptr_map<int, Connection> connections;
 };
 
 
@@ -577,10 +575,10 @@ void on_read_interactive_cb(int fd, short ev, void *arg)
     char b[16];
     ssize_t cnt;
     cnt = read(fd, b, 16);
-    cout << "on_read_interactive_cb: read: " << cnt << endl;
+    //cout << "on_read_interactive_cb: read: " << cnt << endl;
     if( cnt == 0 ) {
-        LOG4CXX_ERROR(crawlog,fs("on_read_interactive_cb: EOF fd: " << fd));
-        event_del(&g->interactive_event);
+        LOG4CXX_WARN(crawlog,fs("on_read_interactive_cb: EOF fd: " << fd));
+        //event_del(&g->interactive_event);
         g->interactive_process(true);
     } else if( cnt < 0) {
         LOG4CXX_ERROR(crawlog,fs("on_read_interactive_cb: read error: " << strerror(errno) << " fd: " << fd));
@@ -593,15 +591,15 @@ void on_read_interactive_cb(int fd, short ev, void *arg)
 
 void accept_cb(int listen_sock, short event, void *arg)
 {
+    //cout << "accept_cb: " << listen_sock << " " << arg <<  endl;
     GlobalInfo* globalInfo = static_cast<GlobalInfo*>(arg);
     std::auto_ptr<GlobalInfo::Connection> connection(new GlobalInfo::Connection(globalInfo, globalInfo->m_listen_addrlen));
     if (connection->accept(listen_sock, event)) {
-        if (globalInfo->connections.erase(connection->m_fd)) {
+        if (globalInfo->connections.erase(connection->m_fd))
             LOG4CXX_WARN(crawlog, fs("stale connection on: " << connection->m_fd));
-            event_del(&connection->m_read_event);
-        }
         int fd = connection->m_fd;
-        globalInfo->connections.insert(fd, connection);
+        pair<boost::ptr_map<int, GlobalInfo::Connection>::iterator, bool> res = globalInfo->connections.insert(fd, connection);
+        assert(res.second);
     }
 }
 
@@ -611,17 +609,21 @@ bool GlobalInfo::Connection::accept(int listen_sock, short event)
     if (m_socklen > m_globalInfo->m_listen_addrlen)
         utils::err_sys("accept_cb: accept sockaddr len truncated");
     if (m_fd < 0) {
+        cout << "EAGAIN " << m_fd << endl;
         assert(errno == EAGAIN);
     } else if (m_fd > FD_SETSIZE) {
         LOG4CXX_ERROR(crawlog, fs("fd > FD_SETSIZE (" << FD_SETSIZE << ")"));
         close(m_fd);
     } else {
+        //cout << "GlobalInfo::Connection::accept: " << m_fd << endl;
         char host[NI_MAXHOST], serv[NI_MAXSERV];
 
-        if( getnameinfo(m_sa, m_socklen, host, NI_MAXHOST , serv, NI_MAXSERV, NI_NUMERICHOST) >= 0 ) {
+        if( getnameinfo(m_sa, m_socklen, host, NI_MAXHOST , serv, NI_MAXSERV, NI_NUMERICHOST) == 0 ) {
             LOG4CXX_INFO(crawlog, fs("connection from: " << host << ":" << serv));
             m_host.assign(host);
             m_serv.assign(serv);
+        } else {
+            LOG4CXX_ERROR(crawlog, fs("getnameinfo failed"));
         }
 
         event_set (&m_read_event, m_fd, EV_READ | EV_PERSIST, connection_read_cb, this);
@@ -640,6 +642,7 @@ void connection_write_cb(int fd, short event, void *arg)
 
 void connection_read_cb(int fd, short event, void *arg)
 {
+    //cout << "connection_read_cb: " << fd << " " << arg << endl;
     GlobalInfo::Connection* connection = static_cast<GlobalInfo::Connection*>(arg);
     char b[BSIZE];
     ssize_t cnt;
@@ -649,15 +652,13 @@ void connection_read_cb(int fd, short event, void *arg)
         // EOF
         // flush remaining buffers
         //
-        LOG4CXX_INFO(crawlog, fs("connection from: " << connection->m_host << ":" << connection->m_serv << " closed"));
         connection->process_input_buff(true);
-
+        LOG4CXX_INFO(crawlog, fs("connection from: " << connection->m_host << ":" << connection->m_serv << " closed"));
         // Connection is destroyed here
-        connection->m_globalInfo->connections.erase(connection->m_fd);
-        event_del(&connection->m_read_event);
-        //event_del(connection->m_read_event);
+        // erase gets by ref, nasty bug!
+        int key = connection->m_fd;
+        connection->m_globalInfo->connections.erase(key);
         return;
-
     } else if (cnt < 0) {
         utils::err_sys("connection_read_cb: read error");
     } else {
@@ -722,6 +723,29 @@ void multi_cb(int fd, short kind, void *userp)
         }
     }
     g->check_run_count ();
+}
+
+void log_cb(int severity, const char *s)
+{
+    switch (severity) {
+        case _EVENT_LOG_DEBUG:
+            LOG4CXX_DEBUG(crawlog, s);
+            break;
+        
+        case _EVENT_LOG_MSG:
+            LOG4CXX_INFO(crawlog, s);
+            break;
+
+
+        case _EVENT_LOG_WARN:
+            LOG4CXX_WARN(crawlog, s);
+            break;
+
+
+        case _EVENT_LOG_ERR:
+            LOG4CXX_ERROR(crawlog, s);
+            break;
+    }
 }
 
 
@@ -1156,14 +1180,15 @@ void GlobalInfo::status()
 void GlobalInfo::interactive_cmd(const std::string& cmd)
 {
     if( cmd == "qlen" ) {
-        cout << "Top q len: " << classifier.q_len_top() << endl;
+        cout << "Parent queue len: " << classifier.q_len_top() << endl;
         for(size_t i=0; i<NUMHANDLES; ++i)
-            cout << "q("<<i<<") len: " << classifier.q_len(i) << endl;
+            cout << "child queue " << i << " len: " << classifier.q_len(i) << endl;
         cout << endl;
     } else if (cmd == "dumpq") {
         cout << classifier << endl;
     } else if (cmd == "quit") {
-        throw std::runtime_error("quit (interactive)");
+        //throw std::runtime_error("quit (interactive)");
+        quit_program = true;
 
     } else if (cmd == "reschedule") {
         reschedule();
@@ -1190,6 +1215,7 @@ int main(int argc, char **argv)
 
         event_init();
         GlobalInfo g;
+        event_set_log_callback(log_cb);
         event_dispatch();
     } catch(std::exception& e) {
         cerr << "main: caught exception: " << e.what() << endl;
