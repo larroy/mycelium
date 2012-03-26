@@ -1,12 +1,25 @@
 The Mycelium high performance web crawler
 =========================================
 
+<pre>
+   ,---------.       +-----------+
+ .(           )      |           |
+(   Interwebs..)  <--|  crawler  |--->  MongoDB
+ (_         ___)     |           |      mycelium.crawl
+   \.------.)        +-----------+
+
+</pre>
+
 This is a high performance web crawler which uses asyncrhonous IO through
 libevent so it can handle thousands of connections; addresses the [C10K problem](
 http://www.kegel.com/c10k.html).
 
 It handles robots.txt. It mantains a single session per dns host, so it can
 crawl thousands of hosts in parallel without hammering the same host.
+
+It listens on a tcp socket for urls to crawl.
+
+It saves the crawled documents to mongodb.
 
 It's highly recommended to use curl compiled with asyncrhonous DNS (libares),
 otherwise DNS resolving inside curl will block the program.
