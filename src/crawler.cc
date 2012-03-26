@@ -263,6 +263,7 @@ public:
         dl_prev_sample(utils::timer::current()),
         prev_running(0),
         still_running(0),
+        m_ndocs_saved(0),
         classifier(parallel),
         EasyHandles(),
         user_agent("mycelium web crawler - https://github.com/larroy/mycelium"),
@@ -346,11 +347,12 @@ public:
     struct event scheduler_event;
 
     CURLM *multi;
-    uint64_t    dl_bytes;
-    uint64_t    dl_bytes_prev;
+    uint64_t dl_bytes;
+    uint64_t dl_bytes_prev;
     utils::timer dl_prev_sample;
     int prev_running;
     int still_running;
+    size_t m_ndocs_saved;
 
 
     Url_classifier classifier;
@@ -459,7 +461,7 @@ void scheduler_cb(int fd, short kind, void *userp)
     g->dl_bytes_prev = g->dl_bytes;
     g->dl_prev_sample = utils::timer::current();
 
-    cout << "Downloaded: " << utils::fmt_bytes(g->dl_bytes) << " rate: " << utils::fmt_kbytes_s(kBs) << endl;
+    cout << "Downloaded: " << utils::fmt_bytes(g->dl_bytes) << " rate: " << utils::fmt_kbytes_s(kBs) << " docs: " << g->m_ndocs_saved << endl;
     if (quit_program)
         //throw runtime_error("quit_program");
         event_loopbreak();
@@ -944,6 +946,7 @@ void EasyHandle::done(CURLcode result)
             doc->headers = headers_os.str();
             doc->content = content_os.str();
             doc->save(global->mongodb_conn, global->mongodb_namespace);
+            ++global->m_ndocs_saved;
             break;
 
         case HEAD:
