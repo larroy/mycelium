@@ -73,7 +73,7 @@ bool quit_program = false;
 int sigint_cnt = 0;
 
 void sigint_handler(int);
-log4cxx::LoggerPtr crawlog(log4cxx::Logger::getLogger("crawlog"));
+log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("mycelium"));
 
 /// CURLMOPT_SOCKETFUNCTION
 int sock_cb(CURL *e, curl_socket_t s, int what, void *cbp, void *sockp);
@@ -282,7 +282,7 @@ public:
         try {
             mongodb_conn.connect(mongo_server);
         } catch(mongo::UserException& e) {
-            LOG4CXX_ERROR(crawlog, fs("Error connecting to mongodb server: " << mongo_server));
+            LOG4CXX_ERROR(logger, fs("Error connecting to mongodb server: " << mongo_server));
             exit(EXIT_FAILURE);
         }
 
@@ -446,7 +446,7 @@ void timer_cb (int fd, short kind, void *userp)
     } while (rc == CURLM_CALL_MULTI_PERFORM);
     mcode_or_die("timer_cb: curl_multi_socket_action", rc);
 
-    LOG4CXX_DEBUG(crawlog,fs("timer_cb: still_running: " << g->still_running));
+    LOG4CXX_DEBUG(logger, fs("timer_cb: still_running: " << g->still_running));
     g->check_run_count ();
 }
 
@@ -518,11 +518,11 @@ void mcode_or_die(const char *where, CURLMcode code)
 
             case CURLM_BAD_SOCKET:
                 s = "CURLM_BAD_SOCKET";
-                LOG4CXX_WARN(crawlog,fs("curl_multi: " << where << " returns " << s));
+                LOG4CXX_WARN(logger, fs("curl_multi: " << where << " returns " << s));
                 /* ignore this error */
                 return;
         }
-        LOG4CXX_ERROR(crawlog,fs("curl_multi: " << where << " returns " << s));
+        LOG4CXX_ERROR(logger, fs("curl_multi: " << where << " returns " << s));
         exit (code);
     }
 }
@@ -584,11 +584,11 @@ void on_read_interactive_cb(int fd, short ev, void *arg)
     cnt = read(fd, b, 16);
     //cout << "on_read_interactive_cb: read: " << cnt << endl;
     if( cnt == 0 ) {
-        LOG4CXX_WARN(crawlog,fs("on_read_interactive_cb: EOF fd: " << fd));
+        LOG4CXX_WARN(logger, fs("on_read_interactive_cb: EOF fd: " << fd));
         //event_del(&g->interactive_event);
         g->interactive_process(true);
     } else if( cnt < 0) {
-        LOG4CXX_ERROR(crawlog,fs("on_read_interactive_cb: read error: " << strerror(errno) << " fd: " << fd));
+        LOG4CXX_ERROR(logger, fs("on_read_interactive_cb: read error: " << strerror(errno) << " fd: " << fd));
         event_del(&g->interactive_event);
     } else {
         g->interactive_buff.append(b,cnt);
@@ -603,7 +603,7 @@ void accept_cb(int listen_sock, short event, void *arg)
     std::auto_ptr<GlobalInfo::Connection> connection(new GlobalInfo::Connection(globalInfo, globalInfo->m_listen_addrlen));
     if (connection->accept(listen_sock, event)) {
         if (globalInfo->connections.erase(connection->m_fd))
-            LOG4CXX_WARN(crawlog, fs("stale connection on: " << connection->m_fd));
+            LOG4CXX_WARN(logger, fs("stale connection on: " << connection->m_fd));
         int fd = connection->m_fd;
         pair<boost::ptr_map<int, GlobalInfo::Connection>::iterator, bool> res = globalInfo->connections.insert(fd, connection);
         assert(res.second);
@@ -620,18 +620,18 @@ bool GlobalInfo::Connection::accept(int listen_sock, short event)
         cout << "EAGAIN " << m_fd << endl;
         assert(errno == EAGAIN);
     } else if (m_fd > FD_SETSIZE) {
-        LOG4CXX_ERROR(crawlog, fs("fd > FD_SETSIZE (" << FD_SETSIZE << ")"));
+        LOG4CXX_ERROR(logger, fs("fd > FD_SETSIZE (" << FD_SETSIZE << ")"));
         close(m_fd);
     } else {
         //cout << "GlobalInfo::Connection::accept: " << m_fd << endl;
         char host[NI_MAXHOST], serv[NI_MAXSERV];
 
         if( getnameinfo(m_sa, m_socklen, host, NI_MAXHOST , serv, NI_MAXSERV, NI_NUMERICHOST) == 0 ) {
-            LOG4CXX_INFO(crawlog, fs("connection from: " << host << ":" << serv));
+            LOG4CXX_INFO(logger, fs("connection from: " << host << ":" << serv));
             m_host.assign(host);
             m_serv.assign(serv);
         } else {
-            LOG4CXX_ERROR(crawlog, fs("getnameinfo failed"));
+            LOG4CXX_ERROR(logger, fs("getnameinfo failed"));
         }
 
         event_set (&m_read_event, m_fd, EV_READ | EV_PERSIST, connection_read_cb, this);
@@ -661,7 +661,7 @@ void connection_read_cb(int fd, short event, void *arg)
         // flush remaining buffers
         //
         connection->process_input_buff(true);
-        LOG4CXX_INFO(crawlog, fs("connection from: " << connection->m_host << ":" << connection->m_serv << " closed"));
+        LOG4CXX_INFO(logger, fs("connection from: " << connection->m_host << ":" << connection->m_serv << " closed"));
         // Connection is destroyed here
         // erase gets by ref, nasty bug!
         int key = connection->m_fd;
@@ -737,21 +737,21 @@ void log_cb(int severity, const char *s)
 {
     switch (severity) {
         case _EVENT_LOG_DEBUG:
-            LOG4CXX_DEBUG(crawlog, s);
+            LOG4CXX_DEBUG(logger, s);
             break;
 
         case _EVENT_LOG_MSG:
-            LOG4CXX_INFO(crawlog, s);
+            LOG4CXX_INFO(logger, s);
             break;
 
 
         case _EVENT_LOG_WARN:
-            LOG4CXX_WARN(crawlog, s);
+            LOG4CXX_WARN(logger, s);
             break;
 
 
         case _EVENT_LOG_ERR:
-            LOG4CXX_ERROR(crawlog, s);
+            LOG4CXX_ERROR(logger, s);
             break;
     }
 }
@@ -774,14 +774,14 @@ void EasyHandle::reschedule()
     curl_easy_reset(easy);
 
     Url url = global->classifier.peek(id);
-    //LOG4CXX_DEBUG(crawlog,fs("peek("<<id<<"): " << url.get()));
+    //LOG4CXX_DEBUG(logger, fs("peek("<<id<<"): " << url.get()));
     //url.normalize_host();
     url.normalize();
     if( ! robots_entry
         || url.host() != robots_entry->host
         || robots_entry->state == robots::EMPTY ) {
 
-        LOG4CXX_INFO(crawlog,fs("handle id: " << id << " retrieving robots: " << url.host()));
+        LOG4CXX_INFO(logger, fs("handle id: " << id << " retrieving robots: " << url.host()));
 
         /*******/
         state = ROBOTS;
@@ -843,7 +843,7 @@ void EasyHandle::reschedule()
 
         while( ! global->classifier.empty(id) ) {
             url = global->classifier.peek(id);
-            //LOG4CXX_DEBUG(crawlog,fs("peek("<<id<<"): " << url.get()));
+            //LOG4CXX_DEBUG(logger, fs("peek("<<id<<"): " << url.get()));
             global->classifier.pop(id);
 
             if( robots_entry->path_allowed(global->user_agent, url.path()) ) {
@@ -860,7 +860,7 @@ void EasyHandle::reschedule()
 
             } else {
                 // disallowed by robots.txt
-                LOG4CXX_DEBUG(crawlog,fs("handle id: " << id << ", url: " << url.get() << " not allowed (robots.txt)"));
+                LOG4CXX_DEBUG(logger, fs("handle id: " << id << ", url: " << url.get() << " not allowed (robots.txt)"));
             }
         }
     } else {
@@ -898,10 +898,10 @@ void EasyHandle::done(CURLcode result)
     doc->crawled = t.tv_sec;
 
     if( result == CURLE_OK ) {
-        LOG4CXX_INFO (crawlog,fs("handle id: " << id << " DONE: "
+        LOG4CXX_INFO (logger, fs("handle id: " << id << " DONE: "
             << eff_url << " HTTP " << doc->http_code));
     } else {
-        LOG4CXX_WARN(crawlog,fs("handle id: " << id << " DONE: "
+        LOG4CXX_WARN(logger, fs("handle id: " << id << " DONE: "
             << eff_url << " HTTP " << doc->http_code
             << " curl_code: " << result << " (" << curl_error << ")"));
     }
@@ -952,7 +952,7 @@ void EasyHandle::done(CURLcode result)
         case HEAD:
         case FINISHED:
         default:
-            LOG4CXX_DEBUG(crawlog,"Unsupported state in EasyHandle::done");
+            LOG4CXX_DEBUG(logger, "Unsupported state in EasyHandle::done");
             break;
     }
     state = EasyHandle::IDLE;
@@ -963,7 +963,7 @@ void EasyHandle::done(CURLcode result)
 
 void EasyHandle::get_content(const Url& url)
 {
-    LOG4CXX_INFO(crawlog,fs("handle id: " << id << " retrieving content: " << url.host()));
+    LOG4CXX_INFO(logger, fs("handle id: " << id << " retrieving content: " << url.host()));
     bool preexisting = doc->load_url(global->mongodb_conn, global->mongodb_namespace, url);
 
     string url_string = doc->url.get();
@@ -1023,7 +1023,7 @@ void EasyHandle::get_content(const Url& url)
 void GlobalInfo::listen()
 {
     m_listen_sock = utils::Tcp_listen(0, m_port.c_str(), &m_listen_addrlen);
-    LOG4CXX_INFO(crawlog, fs("Listening on port " << m_port));
+    LOG4CXX_INFO(logger, fs("Listening on port " << m_port));
     event_set(&accept_event, m_listen_sock, EV_READ | EV_PERSIST, accept_cb, this);
     event_add(&accept_event, NULL);
 }
@@ -1053,7 +1053,7 @@ void GlobalInfo::check_run_count ()
         CURL *easy;
         CURLcode res;
 
-        LOG4CXX_DEBUG(crawlog,fs("REMAINING: " << still_running));
+        LOG4CXX_DEBUG(logger, fs("REMAINING: " << still_running));
         /*
            I am still uncertain whether it is safe to remove an easy handle
            from inside the curl_multi_info_read loop, so here I will search
@@ -1100,19 +1100,19 @@ void GlobalInfo::Connection::process_input_buff(bool flush)
     while( (hare=m_input_buff.find_first_of("\n\r", tortoise)) != string::npos ) {
         if( hare > tortoise+1 ) { // avoid runs of separators
             string line = m_input_buff.substr(tortoise, hare - tortoise);
-            //LOG4CXX_DEBUG(crawlog,fs("read line: " << line));
+            //LOG4CXX_DEBUG(logger, fs("read line: " << line));
             try {
                 Url url(line);
                 //cout << "url: " << url << endl;
-                //LOG4CXX_INFO(crawlog,fs("read url: " << url.get()));
+                //LOG4CXX_INFO(logger, fs("read url: " << url.get()));
                 // TODO only accept http scheme
                 if( url.absolute() && url.scheme() == "http" )
                     m_globalInfo->classifier.push(url);
                 else
-                    LOG4CXX_WARN(crawlog,fs("non-http scheme, ignoring " << url.to_string() << endl));
+                    LOG4CXX_WARN(logger, fs("non-http scheme, ignoring " << url.to_string() << endl));
 
             } catch(UrlParseError& e) {
-                LOG4CXX_ERROR(crawlog,fs("url parse error: " << line << " : " << e.what() ));
+                LOG4CXX_ERROR(logger, fs("url parse error: " << line << " : " << e.what() ));
             }
         }
         tortoise = ++hare;
@@ -1123,14 +1123,14 @@ void GlobalInfo::Connection::process_input_buff(bool flush)
         if( line.empty() )
             return;
 
-        LOG4CXX_DEBUG(crawlog,fs("flush line: " << line));
+        LOG4CXX_DEBUG(logger, fs("flush line: " << line));
         try {
             Url url(line);
             //cout << "url: " << url << endl;
-            LOG4CXX_DEBUG(crawlog,fs("read url: " << url.get()));
+            LOG4CXX_DEBUG(logger, fs("read url: " << url.get()));
             m_globalInfo->classifier.push(url);
         } catch(UrlParseError& e) {
-            LOG4CXX_ERROR(crawlog,fs("url parse error: " << line << " : " << e.what() ));
+            LOG4CXX_ERROR(logger, fs("url parse error: " << line << " : " << e.what() ));
         }
         m_input_buff.clear();
     } else if(tortoise < m_input_buff.size()) {
@@ -1152,7 +1152,7 @@ void GlobalInfo::interactive_process(bool flush)
     while( (hare=interactive_buff.find_first_of("\n\r", tortoise)) != string::npos ) {
         if( hare > tortoise+1 ) { // avoid runs of separators
             string line = interactive_buff.substr(tortoise, hare - tortoise);
-            LOG4CXX_DEBUG(crawlog,fs("interactive read line: " << line));
+            LOG4CXX_DEBUG(logger, fs("interactive read line: " << line));
             interactive_cmd(line);
         }
         tortoise = ++hare;
@@ -1161,7 +1161,7 @@ void GlobalInfo::interactive_process(bool flush)
         // process from tortoise
         string line = interactive_buff.substr(tortoise);
         if( ! line.empty() ) {
-            LOG4CXX_DEBUG(crawlog,fs("interactive flush line: " << line));
+            LOG4CXX_DEBUG(logger, fs("interactive flush line: " << line));
             interactive_cmd(line);
         }
     }
@@ -1212,8 +1212,8 @@ try {
     log4cxx::BasicConfigurator::configure();
     log4cxx::PropertyConfigurator::configure("log.cfg");
 
-    LOG4CXX_INFO(crawlog,fs("Initializing system..."));
-    LOG4CXX_DEBUG(crawlog,fs("debug info enabled"));
+    LOG4CXX_INFO(logger, fs("Initializing system..."));
+    LOG4CXX_DEBUG(logger, fs("debug info enabled"));
 
     if (signal(SIGINT, sigint_handler) == SIG_ERR)
         utils::err_sys("signal");
@@ -1231,7 +1231,7 @@ try {
         port.assign(res);
 
 
-    LOG4CXX_INFO(crawlog,fs("Starting " << parallel << " crawlers"));
+    LOG4CXX_INFO(logger, fs("Starting " << parallel << " crawlers"));
 
     event_init();
     GlobalInfo g(static_cast<size_t>(parallel), port);
