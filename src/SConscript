@@ -14,10 +14,10 @@ libcommon = env.Library('common', source=env['common_sources'])
 env['crawler'] = env.Program('crawler/crawler', SCons.Util.flatten([robots_flex, env['crawler_sources'], libcommon]))
 
 
-#env['local_indexer'] = env.Program('local_indexer', SCons.Util.flatten([
-#    env['local_indexer_sources'],
-#    env['common_sources']
-#    ]))
+env['local_indexer'] = env.Program('local_indexer/local_indexer', SCons.Util.flatten([
+        env['local_indexer_sources'],
+        libcommon
+    ]))
 
 ut_env = env.Clone()
 ut_env.Append(LIBS=['boost_unit_test_framework'])
