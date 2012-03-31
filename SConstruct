@@ -7,7 +7,6 @@ from multiprocessing import cpu_count
 
 from utils import SCutils
 import utils
-import utils.SourceScanner
 
 
 # global configuration
@@ -82,7 +81,8 @@ cxxflags = [
 
 includes = [
     '.',
-    Dir('src/common').get_abspath()
+    Dir('src/common').get_abspath(),
+    Dir('src/crawler').get_abspath()
 ]
 
 
@@ -218,12 +218,13 @@ else:
 
 #VariantDir('build', '.')
 
-#env['sources'] = SCutils.get_sources('src/sources.txt')
-env['unit_test_sources'] = utils.findall('src/unit_test', '*.cc', 1)
-#print env['unit_test_sources']
+env['common_sources'] = utils.findall('src/common', '*.cc', 1)
+env['crawler_sources'] = utils.findall('src/crawler', '*.cc', 1)
+env['unit_tests_sources'] = utils.findall('src/unit_tests', '*.cc', 1)
+env['local_indexer_sources'] = utils.findall('src/local_indexer', '*.cc', 1)
 
 SConscript('src/SConscript', exports=['env'],
-    variant_dir='build/{0}'.format(g_CONFIGURATION['build']), duplicate=1)
+    variant_dir='build/{0}'.format(g_CONFIGURATION['build']), duplicate=0)
 
 ############################################################################
 # install target

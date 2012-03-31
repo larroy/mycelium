@@ -5,34 +5,24 @@ import utils
 
 
 
-print os.getcwd()
 
-env.CXXFile(target='crawler/Robots_flex.cc',source='crawler/robots.ll')
+env.CXXFile(target='crawler/Robots_flex.cc', source='crawler/robots.ll')
 robots_flex = env.Object('crawler/Robots_flex.cc')
 
-src = utils.findall('src/common', '*.cc')
-print 'cwd: ', os.getcwd()
-for i in src:
-    env.Object(i)
-    print i
+libcommon = env.Library('common', source=env['common_sources'])
 
-#libcommon = env.Library('common', source=env['common_sources'])
-
-#objects = dict()
-#for i in env['sources']:
-#    print i
-#    objects[i] = env.Object(i)
+env['crawler'] = env.Program('crawler/crawler', SCons.Util.flatten([robots_flex, env['crawler_sources'], libcommon]))
 
 
-#env['crawler'] = env.Program('crawler', SCons.Util.flatten([objects.values(), robots_flex]))
-
-
-#env['local_indexer'] = env.Program('local_indexer', SCons.Util.flatten([objects['Url, 'local_indexer.cc']))
+#env['local_indexer'] = env.Program('local_indexer', SCons.Util.flatten([
+#    env['local_indexer_sources'],
+#    env['common_sources']
+#    ]))
 
 ut_env = env.Clone()
 ut_env.Append(LIBS=['boost_unit_test_framework'])
+env['unit_tests'] = ut_env.Program('unit_tests/unit_tests', env['unit_tests_sources'])
 
-if env['unit_test_sources']:
+#if env['unit_test_sources']:
     #for i in env['unit_test_sources']:
     #    env.Object(i)
-    env['unit_test_exe'] = ut_env.Program('unit_test_exe', env['unit_test_sources'])
