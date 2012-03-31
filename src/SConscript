@@ -21,7 +21,7 @@ env['crawler'] = env.Program('crawler/crawler', SCons.Util.flatten([robots_flex,
 
 ut_env = env.Clone()
 ut_env.Append(LIBS=['boost_unit_test_framework'])
-env['unit_tests'] = ut_env.Program('unit_tests/unit_tests', env['unit_tests_sources'])
+env['unit_tests'] = ut_env.Program('unit_tests/unit_tests',  SCons.Util.flatten([env['unit_tests_sources'], libcommon]))
 
 #if env['unit_test_sources']:
     #for i in env['unit_test_sources']:
