@@ -1,1 +1,1 @@
-set makeprg=scons\ --build=debug --noauto_j
+set makeprg=scons\ --build=debug\ --noauto_j
