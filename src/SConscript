@@ -1,6 +1,5 @@
 Import('env')
 import os
-import SCutils
 import SCons.Util
 import utils
 
@@ -8,16 +7,24 @@ import utils
 
 print os.getcwd()
 
-env.CXXFile(target='Robots_flex.cc',source='robots.ll')
-robots_flex = env.Object('Robots_flex.cc')
+env.CXXFile(target='crawler/Robots_flex.cc',source='crawler/robots.ll')
+robots_flex = env.Object('crawler/Robots_flex.cc')
 
-objects = dict()
-for i in env['sources']:
+src = utils.findall('src/common', '*.cc')
+print 'cwd: ', os.getcwd()
+for i in src:
+    env.Object(i)
     print i
-    objects[i] = env.Object(i)
+
+#libcommon = env.Library('common', source=env['common_sources'])
+
+#objects = dict()
+#for i in env['sources']:
+#    print i
+#    objects[i] = env.Object(i)
 
 
-env['crawler'] = env.Program('crawler', SCons.Util.flatten([objects.values(), robots_flex]))
+#env['crawler'] = env.Program('crawler', SCons.Util.flatten([objects.values(), robots_flex]))
 
 
 #env['local_indexer'] = env.Program('local_indexer', SCons.Util.flatten([objects['Url, 'local_indexer.cc']))

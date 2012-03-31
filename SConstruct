@@ -5,9 +5,14 @@ import sys
 import os
 from multiprocessing import cpu_count
 
-import SCutils
+from utils import SCutils
 import utils
+import utils.SourceScanner
 
+
+# global configuration
+g_CONFIGURATION = dict()
+g_CONFIGURATION['basedir'] = os.getcwd()
 
 ############################################################################
 # Commandline user options:
@@ -27,7 +32,7 @@ SCutils.add_option('gprof_profile', "compile with profiling support", 0)
 SCutils.add_option('system_curl', "use system's curl", 0)
 
 # Auto -j
-if not SCutils.has_option('noauto_j'):
+if not SCutils.has_option('noauto_j') and GetOption('num_jobs') == 1:
     PARALLELISM = int(cpu_count() * 1.15)
     print 'Autoselecting number of jobs: {0} (use --noauto_j to disable)'.format(PARALLELISM)
     SetOption('num_jobs', PARALLELISM)
@@ -61,7 +66,6 @@ if SCutils.has_option('glibcxx_debug'):
 
 
 ccflags = [
-    '-std=c++0x',
     '-Wall',
     '-march=native',
 #    '-Wno-deprecated',
@@ -72,100 +76,16 @@ ccflags = [
 #    '-I{0}'.format(Dir('3rd_party/boost/').get_abspath())
 ]
 
-linkflags = [
-    '-rdynamic'
+cxxflags = [
+    '-std=c++0x'
 ]
-
-if SCutils.has_option('gprof_profile'):
-    ccflags.append('-pg')
-    linkflags.append('-pg')
-
-for k, v in ARGLIST:
-    if k == 'ccflag':
-        ccflags.append(v)
-        print '*****************\nAdding custom ccflag: {0}\nlist of current ccflags: '.format(v), ccflags,\
-            '\n****************\n'
-
-    elif k == 'define':
-        cppdefines.append(v)
-        print '****************\nAdding custom define: {0}\nlist of current defines: '.format(v), cppdefines,\
-            '\n****************\n'
-
-############################################################################
-# Configure debug or release build environment
-#
-build = GetOption('build')
-if not build:
-    build = 'release'
-
-#
-# DEBUG
-#
-if build == 'debug':
-    cppdefines.append('DEBUG')
-
-    ccflags.extend([
-        '-O0',
-        '-ggdb3'
-    ])
-
-#
-# RELEASE
-#
-elif build == 'release':
-    if not SCutils.has_option('assert'):
-        cppdefines.append('NDEBUG')
-
-
-    ccflags.extend([
-        '-O3'
-    ])
-
-else:
-    raise SCons.Errors.StopError('build {0} not supported'.format(build))
-
-env = Environment(
-    platform = 'posix',
-    CCFLAGS=ccflags,
-    CPPDEFINES=cppdefines,
-    LINKFLAGS=linkflags,
-    tools=['default'],
-    toolpath='.')
-
-env.Decider('MD5-timestamp')
-
-
-############################################################################
-# Flex builder
-flex_bld = env.Builder(action=bld_lex, suffix='.ll', src_suffix='.ll');
-env.Append(BUILDERS={'Flex':flex_bld})
-env.Append(LEXFLAGS=['-Cf'])
-
-# The default scons LEXCOM doesn't correlate to line numbers in the C/C++ file
-env['LEXCOM'] = '$LEX $LEXFLAGS --outfile=$TARGET $SOURCES'
-
-############################################################################
-
-############################################################################
-# Build verbosity
-if not SCutils.has_option('verbose'):
-    SCutils.setup_quiet_build(env, True if SCutils.has_option('colorblind') else False)
-############################################################################
-
-
-############################################################################
-# Look if ccache available or is explicitly disabled
-if (GetOption('ccache')  and GetOption('ccache') == 'yes')\
-    or (SCutils.which('ccache') and not GetOption('ccache') == 'no'):
-
-    env['CC'] ='ccache gcc'
-    env['CXX'] ='ccache g++'
-
-############################################################################
 
 includes = [
-    '.'
+    '.',
+    Dir('src/common').get_abspath()
 ]
+
+
 libs = []
 if not SCutils.has_option('system_curl'):
     print 'Linking with static curl'
@@ -193,27 +113,117 @@ libs.extend([
     'crypto'
 ])
 
+linkflags = [
+    '-rdynamic'
+]
 
+if SCutils.has_option('gprof_profile'):
+    ccflags.append('-pg')
+    linkflags.append('-pg')
 
+for k, v in ARGLIST:
+    if k == 'ccflag':
+        ccflags.append(v)
+        print '*****************\nAdding custom ccflag: {0}\nlist of current ccflags: '.format(v), ccflags,\
+            '\n****************\n'
 
-# Add the previous settings to the build environment
+    elif k == 'define':
+        cppdefines.append(v)
+        print '****************\nAdding custom define: {0}\nlist of current defines: '.format(v), cppdefines,\
+            '\n****************\n'
 
-env.Append(CPPPATH=includes)
-env.Append(LIBS=libs)
-env.Append(LIBPATH=[Dir('lib')])
+    elif k == 'cxxflag':
+        cxxflags.append(v)
+        print '****************\nAdding custom cxxflag: {0}\nlist of current cxxflags: '.format(v), cxxflags,\
+            '\n****************\n'
+
+#
+# Configure debug or release build environment
+#
+g_CONFIGURATION['build'] = GetOption('build')
+if not g_CONFIGURATION['build']:
+    g_CONFIGURATION['build'] = 'release'
+
+#
+# DEBUG
+#
+if g_CONFIGURATION['build'] == 'debug':
+    cppdefines.append('DEBUG')
+
+    ccflags.extend([
+        '-O0',
+        '-ggdb3'
+    ])
+
+#
+# RELEASE
+#
+elif g_CONFIGURATION['build'] == 'release':
+    cppdefines.append('NDEBUG')
+    ccflags.extend([
+        '-O3'
+    ])
+
+else:
+    raise SCons.Errors.StopError('build {0} not supported'.format(g_CONFIGURATION['build']))
+
+#
+# Create the main environment
+#
+env = Environment(
+    platform = 'posix',
+    CCFLAGS = ccflags,
+    CXXFLAGS = cxxflags,
+    CPPPATH = includes,
+    CPPDEFINES = cppdefines,
+    LIBS = Flatten(libs),
+#    LIBPATH=[Dir('lib')])
+    LINKFLAGS=linkflags,
+    tools=['default'],
+    toolpath='.')
+
+env.Decider('MD5-timestamp')
 env.ParseConfig('pkg-config liblog4cxx --cflags --libs');
+
+
+############################################################################
+# Flex builder
+flex_bld = env.Builder(action=bld_lex, suffix='.ll', src_suffix='.ll');
+env.Append(BUILDERS={'Flex':flex_bld})
+env.Append(LEXFLAGS=['-Cf'])
+
+# The default scons LEXCOM doesn't correlate to line numbers in the C/C++ file
+env['LEXCOM'] = '$LEX $LEXFLAGS --outfile=$TARGET $SOURCES'
+
+############################################################################
+
+############################################################################
+# Build verbosity
+if not SCutils.has_option('verbose'):
+    SCutils.setup_quiet_build(env, True if SCutils.has_option('colorblind') else False)
+############################################################################
+
+
+############################################################################
+# Look if ccache available or is explicitly disabled
+if (GetOption('ccache')  and GetOption('ccache') == 'yes') or (SCutils.which('ccache') and not GetOption('ccache') == 'no'):
+    env['CC'] ='ccache gcc'
+    env['CXX'] ='ccache g++'
+else:
+    env['CXX'] = os.environ.get('CXX', 'g++')
+    env['CC'] = os.environ.get('CC', 'gcc')
 
 ############################################################################
 # Get the sources and store them in the environment
 
 #VariantDir('build', '.')
 
-env['sources'] = SCutils.get_sources('src/sources.txt')
+#env['sources'] = SCutils.get_sources('src/sources.txt')
 env['unit_test_sources'] = utils.findall('src/unit_test', '*.cc', 1)
 #print env['unit_test_sources']
 
 SConscript('src/SConscript', exports=['env'],
-    variant_dir='build/{0}'.format(build), duplicate=0)
+    variant_dir='build/{0}'.format(g_CONFIGURATION['build']), duplicate=1)
 
 ############################################################################
 # install target
@@ -225,10 +235,9 @@ else:
     INSTALL_PATH = os.path.join(os.environ.get('HOME'), 'bin')
 
 Alias('install', INSTALL_PATH)
-env.Install(INSTALL_PATH, env['crawler'])
+#env.Install(INSTALL_PATH, env['crawler'])
 
 ############################################################################
 # doc target
 #
 env.Command('doc','doxygen.conf','doxygen doxygen.conf')
-
