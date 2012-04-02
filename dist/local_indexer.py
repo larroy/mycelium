@@ -11,6 +11,8 @@ import multiprocessing
 import document
 import string
 import utils
+import common
+import re
 
 PDFTOTEXT = "pdftotext"
 
@@ -28,7 +30,7 @@ def xcall(args):
     return (stdout, stderr, ret)
 
 def extension(fname):
-    return string.lower(os.path.splitext(fname))
+    return os.path.splitext(fname.lower())[1]
 
 
 def filter_ascii_control(s):
@@ -44,7 +46,7 @@ class Indexer:
     def directory(self, directory):
         for path, dirnames, filenames in os.walk(directory):
             for filename in filenames:
-                self.index_file(filename)
+                self.file(os.path.join(path, filename))
 
     def totext_pdf(self, fname):
         result = xcall([PDFTOTEXT, "-enc", "UTF-8", "--", fname, "-"])
@@ -71,14 +73,17 @@ class Indexer:
             return
 
         urls = 'file://{0}'.format(os.path.realpath(fname))
-        url = url.Url(urls)
+        url = common.Url(urls)
         url.normalize()
-        assert(re.match(r'^file:///.+', url))
         doc = document.Doc()
         doc.url = url.get()
-        (out, err, res) = self.totext(fname)
+        assert(re.match(r'^file:///.+', doc.url))
+        sys.stdout.write('indexing "{0}"'.format(doc.url))
+        sys.stdout.flush()
 
+        (out, err, res) = self.totext(fname)
         if res == 0:
+            print ' ok.'
             doc.content = out
             doc.flags = 1
             doc.http_code = 200
@@ -87,6 +92,7 @@ class Indexer:
             doc.http_code = 415
             error = 'error indexing "{0}" reason: "{1}"'.format(fname, err)
             doc.error = error
+            print ' error: {1}.'.format(err)
             sys.stderr.write(error)
         doc.save()
 
@@ -96,7 +102,7 @@ def main():
         return 1
 
     for arg in sys.argv:
-        assert(os.path.sidir(arg) or os.path.isfile(arg))
+        assert(os.path.isdir(arg) or os.path.isfile(arg))
 
     index = Indexer()
     for arg in sys.argv:

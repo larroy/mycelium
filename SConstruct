@@ -8,6 +8,11 @@ from multiprocessing import cpu_count
 from utils import SCutils
 import utils
 
+import sysconfig
+
+BOOST_PYTHON_INC = '/usr/include/python{0}'.format(sysconfig.get_python_version())
+print 'Using python include: {0}'.format(BOOST_PYTHON_INC)
+PYTHON_SHARED_INSTALL = 'dist'
 
 # global configuration
 g_CONFIGURATION = dict()
@@ -28,7 +33,7 @@ SCutils.add_option('define', "Additional define", 1)
 SCutils.add_option('assert', "enable assertions", 0)
 SCutils.add_option('glibcxx_debug', "enable glibcxx debug", 0)
 SCutils.add_option('gprof_profile', "compile with profiling support", 0)
-SCutils.add_option('system_curl', "use system's curl", 0)
+SCutils.add_option('system_libs', "use system's libraries", 0)
 
 # Auto -j
 if not SCutils.has_option('noauto_j') and GetOption('num_jobs') == 1:
@@ -41,13 +46,11 @@ else:
 
 ############################################################################
 
-
-
+# GNU Flex builder hack, fixes a bug with C comments in flex file
 def bld_lex(target, source, env):
     print '%s -> %s' % (source[0],target[0])
     os.system('perl -0777 -pe \'s{/\*.*?\*/}{}gs\' < %s > %s' % (source[0],target[0]))
     return None
-
 
 ############################################################################
 
@@ -87,7 +90,8 @@ includes = [
 
 
 libs = []
-if not SCutils.has_option('system_curl'):
+system_libs = []
+if not SCutils.has_option('system_libs'):
     print 'Linking with static curl'
     curl_static = File('3rd_party/curl_install/lib/libcurl.a')
     ares_static = File('3rd_party/c-ares_install/lib/libcares.a')
@@ -97,9 +101,10 @@ if not SCutils.has_option('system_curl'):
     libs.append(mongoclient_static)
     includes.append(Dir('3rd_party/curl_install/include/').get_abspath())
 else:
-    libs.append('curl')
+    system_libs.append('curl')
+    system_libs.append('mongoclient')
 
-libs.extend([
+system_libs.extend([
     'boost_filesystem',
     'z',
     'boost_system',
@@ -112,6 +117,8 @@ libs.extend([
     'ssl',
     'crypto'
 ])
+
+libs.extend(system_libs)
 
 linkflags = [
     '-rdynamic'
@@ -185,6 +192,39 @@ env = Environment(
 env.Decider('MD5-timestamp')
 env.ParseConfig('pkg-config liblog4cxx --cflags --libs');
 
+###########################################
+#
+# Check for libraries
+#
+configure = Configure(env)
+for lib in system_libs:
+    configure.CheckLib(lib)
+configure.CheckLib('boost_python')
+env = configure.Finish()
+
+
+
+###########################################
+# Python shared lib compile environment
+
+pyenv = env.Clone(
+    SHLIBPREFIX = '',)
+#    LIBS = [
+#        'boost_python',
+#        'boost_regex',
+#        'boost_filesystem',
+#    ])
+
+#conf = Configure(pyenv)
+
+pyenv.Append(CPPDEFINES=['EXPORT_PYTHON_INTERFACE'], CPPPATH=[BOOST_PYTHON_INC])
+pyenv['PYTHON_SHARED_INSTALL'] = Dir(PYTHON_SHARED_INSTALL).get_abspath()
+pyenv.Alias('install', pyenv['PYTHON_SHARED_INSTALL'])
+
+###########################################
+
+
+
 
 ############################################################################
 # Flex builder
@@ -223,8 +263,12 @@ env['crawler_sources'] = utils.findall('src/crawler', '*.cc', 1)
 env['unit_tests_sources'] = utils.findall('src/unit_tests', '*.cc', 1)
 env['local_indexer_sources'] = utils.findall('src/local_indexer', '*.cc', 1)
 
-SConscript('src/SConscript', exports=['env'],
+
+
+SConscript('src/SConscript', exports=['env', 'pyenv'],
     variant_dir='build/{0}'.format(g_CONFIGURATION['build']), duplicate=0)
+
+
 
 ############################################################################
 # install target

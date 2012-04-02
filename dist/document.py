@@ -4,11 +4,11 @@ import minimongo
 class Doc(minimongo.Model):
     class Meta:
         host = os.environ.get('MYCELIUM_DB_HOST', 'localhost')
-        if os.environ.has_key('MYCELIUM_DB_PORT')
+        if os.environ.has_key('MYCELIUM_DB_PORT'):
             port = os.environ.get('MYCELIUM_DB_PORT')
-        database = os.environ.get('MYCELIUM_DB_NS', 'mycelium.crawl')
+        (database, collection) = os.environ.get('MYCELIUM_DB_NS', 'mycelium.crawl').split('.')
         indices = (
-            Index('url'),
+            minimongo.Index('url'),
         )
 
     def __init__(self):
