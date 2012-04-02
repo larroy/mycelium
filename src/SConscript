@@ -1,23 +1,26 @@
-Import('env')
 import os
 import SCons.Util
 import utils
 
 
+Import('env')
+Import('pyenv')
 
 
 env.CXXFile(target='crawler/Robots_flex.cc', source='crawler/robots.ll')
 robots_flex = env.Object('crawler/Robots_flex.cc')
 
-libcommon = env.Library('common', source=env['common_sources'])
+libcommon = env.Library('common', source = env['common_sources'])
+pylibcommon = pyenv.SharedLibrary('common', source = env['common_sources'])
+pyenv.Install(pyenv['PYTHON_SHARED_INSTALL'], pylibcommon)
 
 env['crawler'] = env.Program('crawler/crawler', SCons.Util.flatten([robots_flex, env['crawler_sources'], libcommon]))
 
 
-#env['local_indexer'] = env.Program('local_indexer', SCons.Util.flatten([
-#    env['local_indexer_sources'],
-#    env['common_sources']
-#    ]))
+env['local_indexer'] = env.Program('local_indexer/local_indexer', SCons.Util.flatten([
+        env['local_indexer_sources'],
+        libcommon
+    ]))
 
 ut_env = env.Clone()
 ut_env.Append(LIBS=['boost_unit_test_framework'])

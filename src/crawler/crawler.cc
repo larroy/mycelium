@@ -60,6 +60,7 @@
     } while(0);
 
 static const size_t PARALLEL_DEFAULT = 20;
+static const char* MONGODB_NAMESPACE_DEFAULT = "mycelium.crawl";
 
 using namespace std;
 
@@ -253,7 +254,7 @@ private:
 public:
     GlobalInfo(size_t parallel, const std::string& port) :
         mongodb_conn(),
-        mongodb_namespace("mycelium.crawl"),
+        mongodb_namespace(MONGODB_NAMESPACE_DEFAULT),
         m_listen_sock(-1),
         m_listen_addrlen(0),
         interactive_buff(),
@@ -273,10 +274,10 @@ public:
     {
         const char* res = 0;
         string mongo_server = "localhost";
-        if ((res = getenv("CRAWLER_DB_HOST")))
+        if ((res = getenv("MYCELIUM_DB_HOST")))
             mongo_server.assign(res);
 
-        if ((res = getenv("CRAWLER_DB_NAMESPACE")))
+        if ((res = getenv("MYCELIUM_DB_NS")))
             mongodb_namespace.assign(res);
 
         try {

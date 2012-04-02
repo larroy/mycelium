@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Pedro Larroy Tovar
+ * Copyright 2012 Pedro Larroy Tovar
  *
  * This file is subject to the terms and conditions
  * defined in file 'LICENSE.txt', which is part of this source
@@ -183,7 +183,6 @@ void install_sig_handlers()
     act.sa_flags = SA_NOCLDSTOP;
     int res = sigaction(SIGCHLD, &act, NULL);
     if (res < 0)
-        cout << "Using: " << PARALLELISM << " cpus." << endl;
         utils::err_sys("sigaction error");
 }
 
@@ -223,8 +222,11 @@ try {
         cerr << "usage:\n" << argv[0] << " dir" << endl;
         exit(EXIT_FAILURE);
     }
+} catch (std::exception& e) {
+    cerr << "unhandled exception in main: " << e.what() << endl;
+    exit(EXIT_FAILURE);
 } catch (...) {
     cerr << "unhandled exception in main" << endl;
     exit(EXIT_FAILURE);
 }
-/** @} */
+/// @}
