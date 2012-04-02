@@ -1221,11 +1221,11 @@ try {
 
     const char* res = 0;
     int parallel = PARALLEL_DEFAULT;
-    if ((res = getenv("CRAWLER_PARALLEL")))
+    if ((res = getenv("MYCELIUM_CRAWLER_PARALLEL")))
         parallel = atoi(res);
 
     if (parallel <= 0)
-        throw std::runtime_error(fs("CRAWLER_PARALLEL can't be negative or 0"));
+        throw std::runtime_error(fs("MYCELIUM_CRAWLER_PARALLEL can't be negative or 0"));
 
     string port("1024");
     if ((res = getenv("CRAWLER_PORT")))

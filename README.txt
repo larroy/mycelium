@@ -24,6 +24,10 @@ It saves the crawled documents to mongodb.
 It's highly recommended to use curl compiled with asyncrhonous DNS (libares),
 otherwise DNS resolving inside curl will block the program.
 
+There's also utilities for indexing local content, currently it only handles
+PDF files which are converted to text with pdftotext:
+    dists/local_index.py
+
 For the impatient
 -----------------
 $ ./bootstrap.sh
@@ -61,11 +65,15 @@ $  scons --system_curl
 Running
 -------
 
-- The crawler is configured with environment variables:
-    CRAWLER_PORT: port to listen for urls
-    CRAWLER_PARALLEL: number of parallel crawlers to run
-    CRAWLER_DB_HOST: mongodb host for storing the documents, default is "localhost"
-    CRAWLER_DB_NAMESPACE: database.collection, defaults to "mycelium.crawl"
+- The environment variables that affect some configuration parameters are:
+    * Specific for the crawler:
+        MYCELIUM_CRAWLER_PORT: port to listen for urls
+        MYCELIUM_CRAWLER_PARALLEL: number of parallel crawlers to run
+
+    * General for all the tools that interact with the DB:
+
+    MYCELIUM_DB_HOST: mongodb host for storing the documents, default is "localhost"
+    MYCELIUM_DB_NS: database.collection, defaults to "mycelium.crawl"
 
 Example / Screenshots:
 ----------------------
