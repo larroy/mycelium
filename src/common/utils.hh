@@ -12,8 +12,8 @@
  * @{
  */
 
-#ifndef utils_hh
-#define utils_hh
+#pragma once
+
 #include <cassert>
 #include <stdexcept>
 #include <stdint.h>
@@ -558,6 +558,5 @@ template<typename T>void int_put(void* b, T t) {
 #define fs(a) \
    (static_cast<const std::ostringstream&>(((*utils::getoss().get()) << a)).str ())
 
-#endif
 /** @} */
 

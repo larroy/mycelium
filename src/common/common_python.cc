@@ -92,5 +92,12 @@ BOOST_PYTHON_MODULE_INIT(common)
 
     def("escape_reserved_unsafe", &Url::escape_reserved_unsafe);
     def("unescape_all", unescape_all);
+
+#if 0
+	class_<Entity_handler>("Entity_handler")
+		.def("replace_all_entities", &Entity_handler::replace_all_entities)
+	;	
+#endif
+
 }
 #endif
