@@ -1,4 +1,4 @@
-The Mycelium high performance web crawler
+The Mycelium Information retrieval system
 =========================================
 
 <pre>
