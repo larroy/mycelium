@@ -5,7 +5,7 @@
 #include "unicode/uchar.h"
 #include "unicode/ucasemap.h"
 
-#include "ucnv_filter.hh"
+//#include "ucnv_filter.hh"
 #include "Unicode_wrap.hh"
 
 #include <vector>

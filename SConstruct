@@ -263,6 +263,7 @@ env['common_sources'] = utils.findall('src/common', '*.cc', 1)
 env['crawler_sources'] = utils.findall('src/crawler', '*.cc', 1)
 env['unit_tests_sources'] = utils.findall('src/unit_tests', '*.cc', 1)
 env['local_indexer_sources'] = utils.findall('src/local_indexer', '*.cc', 1)
+env['html_lexer_sources'] = utils.findall('src/html_lexer', '*.cc', 1)
 
 
 

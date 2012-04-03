@@ -1,7 +1,9 @@
 /* Python interface */
 #ifdef EXPORT_PYTHON_INTERFACE
-#include "Url.hh"
 #include <boost/python.hpp>
+
+#include "Url.hh"
+#include "HTML_lexer.hh"
 using namespace boost::python;
 
 //BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(xf_overloads, scheme, 0, 1)
@@ -92,6 +94,26 @@ BOOST_PYTHON_MODULE_INIT(common)
 
     def("escape_reserved_unsafe", &Url::escape_reserved_unsafe);
     def("unescape_all", unescape_all);
+
+	def("html_lex", html_lex);
+	class_<Analysis>("Analysis")
+		.def_readwrite("title", &Analysis::title, "title of the page")
+		.def_readwrite("rss2", &Analysis::rss2)
+		.def_readwrite("rss", &Analysis::rss)
+		.def_readwrite("atom", &Analysis::atom)
+		.def_readwrite("charset", &Analysis::charset, "encoding of the page")
+		.def_readwrite("index", &Analysis::index, "meta.name.robots.index")
+		.def_readwrite("follow", &Analysis::follow, "meta.name.follow")
+	;	
+
+	class_<ProcHTML>("ProcHTML")
+		.def_readwrite("base_url", &ProcHTML::base_url)
+		.def_readwrite("text", &ProcHTML::text)
+		.def_readwrite("links", &ProcHTML::links)
+		.def_readwrite("warnings", &ProcHTML::warnings)
+		.def_readwrite("analysis", &ProcHTML::analysis)
+	;	
+
 
 #if 0
 	class_<Entity_handler>("Entity_handler")

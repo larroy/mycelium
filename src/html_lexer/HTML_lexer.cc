@@ -1,22 +1,13 @@
-#include "HTML_lexer.hh"
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string.hpp>
-#include "Url.hh"
-#include "utils.hh"
-
-#if 0
-#include "unicode/utypes.h"
-#include "unicode/putil.h"
-#include "unicode/uiter.h"
-#include "unicode/uchar.h"
-#include "unicode/ucasemap.h"
-#endif
-
 #include <memory>
 #include <stdexcept>
 #include <functional>
 
-#define token "[^[:cntrl:]()<>@,;\\\\:\"/\\[\\]?={}\\t]"
+#include "Url.hh"
+#include "utils.hh"
+#include "HTML_lexer.hh"
+
 
 using namespace std;
 
@@ -942,28 +933,3 @@ ProcHTML html_lex(const std::string& html_in, const std::string& base_url)
 
 	return result;
 }
-
-#ifdef EXPORT_PYTHON_INTERFACE
-#include <boost/python.hpp>
-using namespace boost::python;
-BOOST_PYTHON_MODULE_INIT(html_lexer) {
-	def("html_lex", html_lex);
-	class_<Analysis>("Analysis")
-		.def_readwrite("title", &Analysis::title)
-		.def_readwrite("rss2", &Analysis::rss2)
-		.def_readwrite("rss", &Analysis::rss)
-		.def_readwrite("atom", &Analysis::atom)
-		.def_readwrite("charset", &Analysis::charset)
-		.def_readwrite("index", &Analysis::index)
-		.def_readwrite("follow", &Analysis::follow)
-	;	
-
-	class_<ProcHTML>("ProcHTML")
-		.def_readwrite("base_url", &ProcHTML::base_url)
-		.def_readwrite("text", &ProcHTML::text)
-		.def_readwrite("links", &ProcHTML::links)
-		.def_readwrite("warnings", &ProcHTML::warnings)
-		.def_readwrite("analysis", &ProcHTML::analysis)
-	;	
-}
-#endif

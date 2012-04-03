@@ -7,7 +7,7 @@
  */
 
 /**
- * @addtogroup LexicalAnalisys 
+ * @addtogroup LexicalAnalysis 
  * @brief parsing of HTML documents
  *
  * @{
