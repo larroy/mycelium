@@ -85,7 +85,8 @@ cxxflags = [
 includes = [
     '.',
     Dir('src/common').get_abspath(),
-    Dir('src/crawler').get_abspath()
+    Dir('src/crawler').get_abspath(),
+    Dir('src/html_lexer').get_abspath()
 ]
 
 

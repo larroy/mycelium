@@ -273,7 +273,7 @@ literal		({LIT}[^\"]*{LIT})|({LITA}[^\']*{LITA})
 
 
   /* abcd -- data characters */
-/* ([^<&]|(<[^<&a-zA-Z!->?])|(&[^<&#a-zA-Z]))+|.	{ */
+  /* ([^<&]|(<[^<&a-zA-Z!->?])|(&[^<&#a-zA-Z]))+|.	{ */
 [^<]*|.	{ 
 		addtoken(SGML_DATA, yytext, yyleng);
 		process();
@@ -390,11 +390,11 @@ literal		({LIT}[^\"]*{LIT})|({LITA}[^\']*{LITA})
 		warn("bad character in tag", yytext, yyleng);
 	}
 
- /* 10 Markup Declarations: General */
+    /* 10 Markup Declarations: General */
 
 	/* <!^--...-->   -- comment */
-/*<MD,COM>{COM}([^-]|-[^-])*{COM}{ws}	{*/
-/*
+    /*<MD,COM>{COM}([^-]|-[^-])*{COM}{ws}	{*/
+    /*
 <MD,COM>{COM}.*{COM}{ws}	{
 		addtoken(SGML_COMMENT, yytext, yyleng);
 	}
