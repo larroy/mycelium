@@ -106,7 +106,7 @@ BOOST_PYTHON_MODULE_INIT(common)
 		.def_readwrite("follow", &Analysis::follow, "meta.name.follow")
 	;	
 
-	class_<ProcHTML>("ProcHTML")
+	class_<ProcHTML>("ProcHTML", "semantic data from the parsed html document")
 		.def_readwrite("base_url", &ProcHTML::base_url)
 		.def_readwrite("text", &ProcHTML::text)
 		.def_readwrite("links", &ProcHTML::links)
