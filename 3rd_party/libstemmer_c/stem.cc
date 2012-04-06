@@ -9,6 +9,7 @@
 
 #include <libstemmer.h>
 #include <stdexcept>
+#include <iostream>
 #include "utils.hh"
 
 
@@ -87,9 +88,12 @@ int main(int argc, const char* argv[])
 #ifdef EXPORT_PYTHON_INTERFACE
 #include <boost/python.hpp>
 using namespace boost::python;
-BOOST_PYTHON_MODULE_INIT(Stemmer)
+BOOST_PYTHON_MODULE_INIT(stemmer)
 {
-	class_<Stemmer, boost::noncopyable>("Stemmer", "Interface for the snowball libstemmer C lib", init<const char*>())
+	class_<Stemmer, boost::noncopyable>("Stemmer", "Interface for the snowball libstemmer C lib, example of use:\n"
+        ">>> import stemmer\n"
+        ">>> s = stemmer.Stemmer('english')\n"
+        ">>> s.stem('rapidly')", init<const char*>())
 		.def("stem", &Stemmer::stem)
 	;	
 }

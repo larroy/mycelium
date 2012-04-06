@@ -267,6 +267,7 @@ env['html_lexer_sources'] = utils.findall('src/html_lexer', '*.cc', 1)
 
 
 
+SConscript('3rd_party/libstemmer_c/SConscript', exports=['env', 'pyenv'])
 SConscript('src/SConscript', exports=['env', 'pyenv'],
     variant_dir='build/{0}'.format(g_CONFIGURATION['build']), duplicate=0)
 
