@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Pedro Larroy Tovar
+ * Copyright 2007-2012 Pedro Larroy Tovar
  *
  * This file is subject to the terms and conditions
  * defined in file 'LICENSE.txt', which is part of this source

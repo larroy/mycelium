@@ -1,3 +1,10 @@
+/*
+ * Copyright 2012 Pedro Larroy Tovar
+ *
+ * This file is subject to the terms and conditions
+ * defined in file 'LICENSE.txt', which is part of this source
+ * code package.
+ */
 #ifndef STEM_HH
 #define STEM_HH
 
