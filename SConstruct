@@ -110,6 +110,7 @@ system_libs.extend([
     'boost_filesystem',
     'z',
     'boost_system',
+    'boost_thread',
     'boost_regex',
     'log4cxx',
     'pthread',
