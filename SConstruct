@@ -112,6 +112,7 @@ system_libs.extend([
     'boost_system',
     'boost_thread',
     'boost_regex',
+    'icuuc',
     'log4cxx',
     'pthread',
     'event',

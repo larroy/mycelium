@@ -14,13 +14,18 @@ robots_flex = env.Object('crawler/Robots_flex.cc')
 env.CXXFile(target='html_lexer/HTML_flex_lexer.cc', source='html_lexer/html.ll')
 html_flex_lexer = env.Object('html_lexer/HTML_flex_lexer.cc')
 
-libcommon = env.Library('common', source = env['common_sources'])
-#pylibcommon = pyenv.SharedLibrary('common', source = env['common_sources'])
+libcommon = env.Library('common', source = SCons.Util.flatten([
+    env['common_sources'],
+    env['html_lexer_sources'],
+    'html_lexer/HTML_flex_lexer.cc'
+    ]))
+
 pylibcommon = pyenv.SharedLibrary('common', source = SCons.Util.flatten([
     env['common_sources'],
     env['html_lexer_sources'],
     'html_lexer/HTML_flex_lexer.cc'
     ]))
+
 pyenv.Install(pyenv['PYTHON_SHARED_INSTALL'], pylibcommon)
 
 env['crawler'] = env.Program('crawler/crawler', SCons.Util.flatten([robots_flex, env['crawler_sources'], libcommon]))

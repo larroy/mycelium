@@ -95,7 +95,10 @@ namespace content_type {
  * @param[out] content_type 
  * @param[out] charset_http_head charset of the document, if any
  */
-void parse_headers(const std::string& headers, content_type::content_type_t& content_type, std::string& charset_http_head);
+void parse_headers(
+    const std::string& headers,
+    content_type::content_type_t& content_type,
+    std::string& charset_http_head);
 
 struct link {
     std::string url;

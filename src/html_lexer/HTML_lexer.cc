@@ -787,7 +787,11 @@ void HTML_lexer::process() {
 void HTML_lexer::finalize() {
 }
 
-void parse_headers(const string& headers, content_type::content_type_t& content_type, string& charset_http_head)
+void parse_headers(
+    const std::string& headers,
+    content_type::content_type_t& content_type,
+    std::string& charset_http_head
+    )
 {
 #ifdef USE_BOOST_TOKENIZER
 #error "old code"
