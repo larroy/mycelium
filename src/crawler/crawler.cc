@@ -202,6 +202,7 @@ public:
 
 private:
     void get_content(const Url& url);
+    void get_robots(const Url& url);
 };
 
 
@@ -763,7 +764,6 @@ void log_cb(int severity, const char *s)
 /// puts handle back to work, tries to dequeue next URL and set up a retrieval
 void EasyHandle::reschedule()
 {
-    CURLMcode rc;
     if( state != IDLE )
         return;
 
@@ -788,41 +788,17 @@ void EasyHandle::reschedule()
         state = ROBOTS;
         /*******/
 
-        content_os.str("");
-        headers_os.str("");
-
         doc.reset(new Doc());
         doc->url.scheme("http");
         doc->url.host(url.host());
         doc->url.path("robots.txt");
 
-        string url_string = doc->url.get();
+        content_os.str("");
+        headers_os.str("");
 
-        my_curl_easy_setopt(easy, CURLOPT_URL, url_string.c_str());
-
-        my_curl_easy_setopt(easy, CURLOPT_HEADERFUNCTION, NULL);
-        my_curl_easy_setopt(easy, CURLOPT_HEADERDATA, NULL);
-
-        //my_curl_easy_setopt(easy, CURLOPT_HEADERFUNCTION, url_string.c_str());
-        my_curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, header_write_cb);
-        my_curl_easy_setopt(easy, CURLOPT_WRITEDATA, this);
-        my_curl_easy_setopt(easy, CURLOPT_VERBOSE, 0L);
-        //my_curl_easy_setopt(easy, CURLOPT_VERBOSE, 1L);
-        memset(curl_error,0,CURL_ERROR_SIZE);
-        my_curl_easy_setopt(easy, CURLOPT_ERRORBUFFER, curl_error);
-        my_curl_easy_setopt(easy, CURLOPT_PRIVATE, this);
-        my_curl_easy_setopt(easy, CURLOPT_NOPROGRESS, 0L);
-        my_curl_easy_setopt(easy, CURLOPT_PROGRESSFUNCTION, progress_cb);
-        my_curl_easy_setopt(easy, CURLOPT_PROGRESSDATA, this);
-        my_curl_easy_setopt(easy, CURLOPT_HTTPHEADER, 0);
-        // timeouts
-        my_curl_easy_setopt(easy, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
-        my_curl_easy_setopt(easy, CURLOPT_LOW_SPEED_TIME, LOW_SPEED_TIME);
-        my_curl_easy_setopt(easy, CURLOPT_LOW_SPEED_LIMIT, LOW_SPEED_LIMIT);
+        get_robots(doc->url);
 
 
-        rc = curl_multi_add_handle(global->multi, easy);
-        mcode_or_die("reschedule: curl_multi_add_handle", rc);
 
     } else if( robots_entry->state == robots::NOT_AVAILABLE
         || robots_entry->state == robots::EPARSE ) {
@@ -842,9 +818,9 @@ void EasyHandle::reschedule()
     } else if( robots_entry->state == robots::PRESENT
             && url.host() == robots_entry->host ) {
 
+        // We already have robots.txt for this host so we keep dequeueing
         while( ! global->classifier.empty(id) ) {
             url = global->classifier.peek(id);
-            //LOG4CXX_DEBUG(logger, fs("peek("<<id<<"): " << url.get()));
             global->classifier.pop(id);
 
             if( robots_entry->path_allowed(global->user_agent, url.path()) ) {
@@ -1019,6 +995,36 @@ void EasyHandle::get_content(const Url& url)
 
     CURLMcode rc = curl_multi_add_handle(global->multi, easy);
     mcode_or_die("get_content: curl_multi_add_handle", rc);
+}
+
+
+void EasyHandle::get_robots(const Url& url)
+{
+    my_curl_easy_setopt(easy, CURLOPT_URL, url.get().c_str());
+
+    my_curl_easy_setopt(easy, CURLOPT_HEADERFUNCTION, NULL);
+    my_curl_easy_setopt(easy, CURLOPT_HEADERDATA, NULL);
+
+    //my_curl_easy_setopt(easy, CURLOPT_HEADERFUNCTION, url_string.c_str());
+    my_curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, header_write_cb);
+    my_curl_easy_setopt(easy, CURLOPT_WRITEDATA, this);
+    my_curl_easy_setopt(easy, CURLOPT_VERBOSE, 0L);
+    //my_curl_easy_setopt(easy, CURLOPT_VERBOSE, 1L);
+    memset(curl_error,0,CURL_ERROR_SIZE);
+    my_curl_easy_setopt(easy, CURLOPT_ERRORBUFFER, curl_error);
+    my_curl_easy_setopt(easy, CURLOPT_PRIVATE, this);
+    my_curl_easy_setopt(easy, CURLOPT_NOPROGRESS, 0L);
+    my_curl_easy_setopt(easy, CURLOPT_PROGRESSFUNCTION, progress_cb);
+    my_curl_easy_setopt(easy, CURLOPT_PROGRESSDATA, this);
+    my_curl_easy_setopt(easy, CURLOPT_HTTPHEADER, 0);
+    // timeouts
+    my_curl_easy_setopt(easy, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
+    my_curl_easy_setopt(easy, CURLOPT_LOW_SPEED_TIME, LOW_SPEED_TIME);
+    my_curl_easy_setopt(easy, CURLOPT_LOW_SPEED_LIMIT, LOW_SPEED_LIMIT);
+
+
+    CURLMcode rc = curl_multi_add_handle(global->multi, easy);
+    mcode_or_die("reschedule: curl_multi_add_handle", rc);
 }
 
 void GlobalInfo::listen()
