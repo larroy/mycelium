@@ -1,0 +1,128 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>HTML lexer &mdash; mycelium v1.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="mycelium v1.0.0 documentation" href="index.html" />
+    <link rel="next" title="Stemmer" href="stemmer.html" />
+    <link rel="prev" title="The HTTP Crawler" href="crawler.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="stemmer.html" title="Stemmer"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="crawler.html" title="The HTTP Crawler"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">mycelium v1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="html-lexer">
+<h1>HTML lexer<a class="headerlink" href="#html-lexer" title="Permalink to this headline">¶</a></h1>
+<p>This module parses HTML markup, extracts a textual representation in UTF-8 encoding, extracts links to other pages, rss / atom feeds if any. The resulting information of lexing an html document is stored in two data structures:</p>
+<ul class="simple">
+<li>ProcHTML</li>
+<li>Analysis</li>
+</ul>
+<p>This is an example of how to use the common module from Python:</p>
+<div class="highlight-python"><pre>piotr@gomasio:0:~/devel/mycelium/dist$ python
+Python 2.7.2+ (default, Oct  4 2011, 20:06:09)
+[GCC 4.6.1] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; import common
+&gt;&gt;&gt; res = common.html_lex('&lt;html&gt;&lt;head&gt;&lt;title&gt;Hi there&lt;/title&gt;&lt;/head&gt;&lt;body&gt;my body is great&lt;/body&gt;&lt;/html&gt;', 'http://example.com')
+&gt;&gt;&gt; res.text
+'\nHi there\nmy body is great'
+&gt;&gt;&gt; res.analysis.title
+'Hi there'
+&gt;&gt;&gt; help(common)
+...</pre>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="crawler.html"
+                        title="previous chapter">The HTTP Crawler</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="stemmer.html"
+                        title="next chapter">Stemmer</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/html_lexer.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="stemmer.html" title="Stemmer"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="crawler.html" title="The HTTP Crawler"
+             >previous</a> |</li>
+        <li><a href="index.html">mycelium v1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Pedro Larroy Tovar.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>
