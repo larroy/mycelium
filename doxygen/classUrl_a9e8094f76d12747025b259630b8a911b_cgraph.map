@@ -1,0 +1,10 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classUrl.html#a2add036691aa47e378bd50518b711921" title="Url::authority" alt="" coords="285,5,389,35"/>
+<area shape="rect" id="node5" href="$classUrl.html#ae0259b5b5faf9ec902f8d48702bcf8a0" title="Url::fragment" alt="" coords="284,60,391,89"/>
+<area shape="rect" id="node7" href="$classUrl.html#a1364a6b7d6870fc534214d334d817bc1" title="Url::has_authority" alt="" coords="271,116,404,145"/>
+<area shape="rect" id="node9" href="$classUrl.html#a683e26b13e82509aaa8f50600c55f2aa" title="Url::path" alt="" coords="299,175,376,204"/>
+<area shape="rect" id="node13" href="$classUrl.html#a24e6bb9383207117e9fbf7465e257573" title="Url::query" alt="" coords="296,239,379,268"/>
+<area shape="rect" id="node15" href="$classUrl.html#a12638d2d3cdd50c77da18a1748ae8cef" title="Url::scheme" alt="" coords="123,312,221,341"/>
+<area shape="rect" id="node17" href="$classUrl.html#aeb96c1f449e5e752b3364f6c5072aa5d" title="Url::size" alt="" coords="136,157,208,187"/>
+<area shape="rect" id="node11" href="$classPath.html#a4177233bcd196af656915eb1ec8852c6" title="Path::get" alt="" coords="455,175,532,204"/>
+</map>

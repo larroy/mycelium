@@ -1,0 +1,13 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$Doc_8hh.html" title="src/common/Doc.hh" alt="" coords="220,83,369,112"/>
+<area shape="rect" id="node9" href="$local__indexer_8cc.html" title="src/local_indexer/local_indexer.cc" alt="" coords="5,160,237,189"/>
+<area shape="rect" id="node11" href="$Url_8cc.html" title="src/common/Url.cc" alt="" coords="393,83,535,112"/>
+<area shape="rect" id="node13" href="$Url__classifier_8hh.html" title="src/crawler/Url_classifier.hh" alt="" coords="559,83,751,112"/>
+<area shape="rect" id="node18" href="$Robots_8cc.html" title="src/crawler/Robots.cc" alt="" coords="775,83,929,112"/>
+<area shape="rect" id="node20" href="$HTML__lexer_8cc.html" title="src/html_lexer/HTML_lexer.cc" alt="" coords="885,160,1091,189"/>
+<area shape="rect" id="node22" href="$HTML__lexer_8hh.html" title="src/html_lexer/HTML_lexer.hh" alt="" coords="1004,83,1212,112"/>
+<area shape="rect" id="node26" href="$Url__test_8cc.html" title="src/unit_tests/Url_test.cc" alt="" coords="1236,83,1415,112"/>
+<area shape="rect" id="node5" href="$Doc_8cc.html" title="src/common/Doc.cc" alt="" coords="261,160,411,189"/>
+<area shape="rect" id="node7" href="$crawler_8cc.html" title="src/crawler/crawler.cc" alt="" coords="435,160,589,189"/>
+<area shape="rect" id="node16" href="$Url__classifier_8cc.html" title="src/crawler/Url_classifier.cc" alt="" coords="613,160,803,189"/>
+</map>

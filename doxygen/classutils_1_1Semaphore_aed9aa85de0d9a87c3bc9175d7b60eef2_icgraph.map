@@ -1,0 +1,5 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classutils_1_1CircQueue.html#a7b10281c7d68b36037fec7c3d91d5c5b" title="utils::CircQueue::empty" alt="" coords="259,5,429,35"/>
+<area shape="rect" id="node5" href="$classutils_1_1CircQueue.html#a5cc79a0c21f0e33b0176bd854f7b474f" title="utils::CircQueue::free_slots" alt="" coords="248,59,440,88"/>
+<area shape="rect" id="node7" href="$classutils_1_1CircQueue.html#a9c1f0f5b471c644fedc9b3384391df89" title="utils::CircQueue::stored" alt="" coords="259,112,429,141"/>
+</map>

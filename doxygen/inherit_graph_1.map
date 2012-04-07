@@ -1,0 +1,4 @@
+<map id="G" name="G">
+<area shape="rect" id="node1" href="$classBadUrl.html" title="Exception thrown if the url doesn&#39;t look to be valid." alt="" coords="7,5,71,35"/>
+<area shape="rect" id="node3" href="$classUrlParseError.html" title="Exception thrown in case url doesn&#39;t parse correctly." alt="" coords="120,5,227,35"/>
+</map>

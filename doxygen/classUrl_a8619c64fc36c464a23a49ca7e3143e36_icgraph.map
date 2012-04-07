@@ -1,0 +1,15 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classUrl.html#a1f07cd4a3fe2c6a756eb0179fe56a717" title="Url::empty" alt="" coords="173,124,261,153"/>
+<area shape="rect" id="node11" href="$classUrl.html#a91174ba77e66ccf1ea7322007af02085" title="Merge with a relative reference transform a relative referecence u into the target url see [RFC3986 P..." alt="" coords="691,151,805,180"/>
+<area shape="rect" id="node31" href="$Url_8cc.html#a4b44b7b88f6c76c83683b3f2c21e64d4" title="operator\&lt;\&lt;" alt="" coords="168,228,267,257"/>
+<area shape="rect" id="node5" href="$classUrl.html#a2a0d65e056a30ce9296663b641494188" title="Url::operator safe_bool" alt="" coords="315,71,483,100"/>
+<area shape="rect" id="node7" href="$classUrl.html#a93230a3064d5e1a0ede6a8051c294731" title="Url::valid_host" alt="" coords="343,124,455,153"/>
+<area shape="rect" id="node9" href="$classUrl.html#a1b45ca4bf5d4b46de5e0194f2d7ca0fe" title="Url::syntax_ok" alt="" coords="531,124,643,153"/>
+<area shape="rect" id="node13" href="$classHTML__lexer.html#a9cd6afa6d3a5b41bcf37e38e39b72c85" title="HTML_lexer::link_add" alt="" coords="853,72,1008,101"/>
+<area shape="rect" id="node25" href="$classHTML__lexer.html#aa6b020994fe327ed0568729104a4fb6c" title="HTML_lexer::op_link" alt="" coords="857,151,1004,180"/>
+<area shape="rect" id="node28" href="$classUrl.html#a8f08f926fb139164aa0a02de9da56aa3" title="Url::operator+=" alt="" coords="868,204,993,233"/>
+<area shape="rect" id="node15" href="$classHTML__lexer.html#a3911266603d7910ce0de77ad113c39be" title="HTML_lexer::op_a" alt="" coords="1072,5,1205,35"/>
+<area shape="rect" id="node19" href="$classHTML__lexer.html#a987533e0af20d8df7d4c2a66fcf6a698" title="HTML_lexer::op_frame" alt="" coords="1057,59,1220,88"/>
+<area shape="rect" id="node22" href="$classHTML__lexer.html#a358fb4b26dffea283c803b09af729ae4" title="HTML_lexer::op_meta" alt="" coords="1059,112,1219,141"/>
+<area shape="rect" id="node17" href="$classHTML__lexer.html#ad664bb5515480a9127adbbe0e19fdfe7" title="Constructor." alt="" coords="1269,85,1445,115"/>
+</map>

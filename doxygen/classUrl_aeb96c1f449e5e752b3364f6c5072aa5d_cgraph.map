@@ -1,0 +1,8 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classUrl.html#a2add036691aa47e378bd50518b711921" title="Url::authority" alt="" coords="144,5,248,35"/>
+<area shape="rect" id="node5" href="$classUrl.html#ae0259b5b5faf9ec902f8d48702bcf8a0" title="Url::fragment" alt="" coords="143,59,249,88"/>
+<area shape="rect" id="node7" href="$classUrl.html#a1364a6b7d6870fc534214d334d817bc1" title="Url::has_authority" alt="" coords="129,112,263,141"/>
+<area shape="rect" id="node9" href="$classUrl.html#a683e26b13e82509aaa8f50600c55f2aa" title="Url::path" alt="" coords="157,165,235,195"/>
+<area shape="rect" id="node13" href="$classUrl.html#a24e6bb9383207117e9fbf7465e257573" title="Url::query" alt="" coords="155,219,237,248"/>
+<area shape="rect" id="node11" href="$classPath.html#a4177233bcd196af656915eb1ec8852c6" title="Path::get" alt="" coords="313,165,391,195"/>
+</map>

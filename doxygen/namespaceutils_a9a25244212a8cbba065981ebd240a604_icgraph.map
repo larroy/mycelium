@@ -1,0 +1,20 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classEntity__handler.html#a047cfc93500dd72303ca98f96dfcf425" title="Entity_handler::hex_numchar_ref" alt="" coords="200,44,432,73"/>
+<area shape="rect" id="node11" href="$namespaceutils.html#ae5daf5bd09c6e1492820ecaaa3211deb" title="Convert 2 hexadecimal digits to number." alt="" coords="236,97,396,127"/>
+<area shape="rect" id="node5" href="$classEntity__handler.html#a1a419b2aadfe4d0f396460abc44198a7" title="Entity_handler::replace_hex_numchar_ref" alt="" coords="481,44,767,73"/>
+<area shape="rect" id="node7" href="$classEntity__handler.html#a5fa57113dbdde2584130c875b2dd3e9b" title="Entity_handler::replace_all_entities" alt="" coords="816,44,1059,73"/>
+<area shape="rect" id="node9" href="$classHTML__lexer.html#a4fcb9e537f19ebbb48826aacec7d1ac9" title="HTML_lexer::addtoken" alt="" coords="1107,44,1269,73"/>
+<area shape="rect" id="node13" href="$classUrl.html#a0c4ca1091ed83666ac96590f8781633f" title="Url::unescape_not" alt="" coords="555,97,693,127"/>
+<area shape="rect" id="node17" href="$classUrl.html#af4d633bec739e96865cc04d192aa20c5" title="Url::unescape_safe" alt="" coords="552,151,696,180"/>
+<area shape="rect" id="node15" href="$classrobots_1_1Robots.html#ae7af23d483ee03a71361c93052ae0737" title="robots::Robots::path_allowed" alt="" coords="835,97,1040,127"/>
+<area shape="rect" id="node19" href="$classUrl.html#a93230a3064d5e1a0ede6a8051c294731" title="Url::valid_host" alt="" coords="881,151,993,180"/>
+<area shape="rect" id="node21" href="$classUrl.html#a1b45ca4bf5d4b46de5e0194f2d7ca0fe" title="Url::syntax_ok" alt="" coords="1132,151,1244,180"/>
+<area shape="rect" id="node23" href="$classUrl.html#a91174ba77e66ccf1ea7322007af02085" title="Merge with a relative reference transform a relative referecence u into the target url see [RFC3986 P..." alt="" coords="1317,151,1432,180"/>
+<area shape="rect" id="node25" href="$classHTML__lexer.html#a9cd6afa6d3a5b41bcf37e38e39b72c85" title="HTML_lexer::link_add" alt="" coords="1480,84,1635,113"/>
+<area shape="rect" id="node37" href="$classHTML__lexer.html#aa6b020994fe327ed0568729104a4fb6c" title="HTML_lexer::op_link" alt="" coords="1484,151,1631,180"/>
+<area shape="rect" id="node40" href="$classUrl.html#a8f08f926fb139164aa0a02de9da56aa3" title="Url::operator+=" alt="" coords="1495,204,1620,233"/>
+<area shape="rect" id="node27" href="$classHTML__lexer.html#a3911266603d7910ce0de77ad113c39be" title="HTML_lexer::op_a" alt="" coords="1699,5,1832,35"/>
+<area shape="rect" id="node31" href="$classHTML__lexer.html#a987533e0af20d8df7d4c2a66fcf6a698" title="HTML_lexer::op_frame" alt="" coords="1684,59,1847,88"/>
+<area shape="rect" id="node34" href="$classHTML__lexer.html#a358fb4b26dffea283c803b09af729ae4" title="HTML_lexer::op_meta" alt="" coords="1685,112,1845,141"/>
+<area shape="rect" id="node29" href="$classHTML__lexer.html#ad664bb5515480a9127adbbe0e19fdfe7" title="Constructor." alt="" coords="1896,85,2072,115"/>
+</map>

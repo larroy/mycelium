@@ -1,0 +1,14 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classUrl.html#a9e8094f76d12747025b259630b8a911b" title="Url::get" alt="" coords="321,47,391,76"/>
+<area shape="rect" id="node11" href="$classUrl.html#a91174ba77e66ccf1ea7322007af02085" title="Merge with a relative reference transform a relative referecence u into the target url see [RFC3986 P..." alt="" coords="299,125,413,155"/>
+<area shape="rect" id="node27" href="$classUrl.html#aeb96c1f449e5e752b3364f6c5072aa5d" title="Url::size" alt="" coords="159,47,231,76"/>
+<area shape="rect" id="node30" href="$classUrl.html#a1b45ca4bf5d4b46de5e0194f2d7ca0fe" title="Url::syntax_ok" alt="" coords="139,151,251,180"/>
+<area shape="rect" id="node5" href="$classHTML__lexer.html#aa6b020994fe327ed0568729104a4fb6c" title="HTML_lexer::op_link" alt="" coords="465,59,612,88"/>
+<area shape="rect" id="node9" href="$classUrl.html#ab07a88039251d2d0e51ca1967ddd4c6a" title="Url::operator==" alt="" coords="476,5,601,35"/>
+<area shape="rect" id="node7" href="$classHTML__lexer.html#ad664bb5515480a9127adbbe0e19fdfe7" title="Constructor." alt="" coords="877,99,1053,128"/>
+<area shape="rect" id="node13" href="$classHTML__lexer.html#a9cd6afa6d3a5b41bcf37e38e39b72c85" title="HTML_lexer::link_add" alt="" coords="461,125,616,155"/>
+<area shape="rect" id="node25" href="$classUrl.html#a8f08f926fb139164aa0a02de9da56aa3" title="Url::operator+=" alt="" coords="476,179,601,208"/>
+<area shape="rect" id="node15" href="$classHTML__lexer.html#a3911266603d7910ce0de77ad113c39be" title="HTML_lexer::op_a" alt="" coords="680,72,813,101"/>
+<area shape="rect" id="node18" href="$classHTML__lexer.html#a987533e0af20d8df7d4c2a66fcf6a698" title="HTML_lexer::op_frame" alt="" coords="665,125,828,155"/>
+<area shape="rect" id="node21" href="$classHTML__lexer.html#a358fb4b26dffea283c803b09af729ae4" title="HTML_lexer::op_meta" alt="" coords="667,179,827,208"/>
+</map>

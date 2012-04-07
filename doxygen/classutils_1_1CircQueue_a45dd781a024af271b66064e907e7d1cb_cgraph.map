@@ -1,0 +1,5 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classutils_1_1Semaphore.html#aa11797ece482689e248f79174ad60e24" title="utils::Semaphore::post" alt="" coords="240,5,405,35"/>
+<area shape="rect" id="node5" href="$classutils_1_1Semaphore.html#a704e8d5ee578be28003665eafe377f70" title="utils::Semaphore::trywait" alt="" coords="232,59,413,88"/>
+<area shape="rect" id="node7" href="$classutils_1_1Semaphore.html#a222d5dd0950b27a7f8395cbc9e852fea" title="utils::Semaphore::wait" alt="" coords="241,112,404,141"/>
+</map>

@@ -1,0 +1,8 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classGZSTREAM__NAMESPACE_1_1gzstreambuf.html#ab37aa8daee04f5faa3cda2921166dc84" title="GZSTREAM_NAMESPACE::gzstreambuf::overflow" alt="" coords="405,5,736,35"/>
+<area shape="rect" id="node5" href="$classGZSTREAM__NAMESPACE_1_1gzstreambuf.html#a413ee12c09fb34c756dbdedebc6e3609" title="GZSTREAM_NAMESPACE::gzstreambuf::sync" alt="" coords="417,59,724,88"/>
+<area shape="rect" id="node7" href="$classGZSTREAM__NAMESPACE_1_1gzstreambuf.html#aa9f3ce5a0bb6cd012c2432dfbb4433eb" title="GZSTREAM_NAMESPACE::gzstreambuf::close" alt="" coords="785,59,1095,88"/>
+<area shape="rect" id="node9" href="$classGZSTREAM__NAMESPACE_1_1gzstreambase.html#ac84c31996527daa36f56d2bd67ef2a67" title="GZSTREAM_NAMESPACE::gzstreambase::close" alt="" coords="1179,5,1501,35"/>
+<area shape="rect" id="node11" href="$classGZSTREAM__NAMESPACE_1_1gzstreambase.html#a098ded24d5ecc6b9f81b9ae7d0fff8dc" title="GZSTREAM_NAMESPACE::gzstreambase::~gzstreambase" alt="" coords="1144,59,1536,88"/>
+<area shape="rect" id="node13" href="$classGZSTREAM__NAMESPACE_1_1gzstreambuf.html#a0a9d496741dff98c06e545586fec5985" title="GZSTREAM_NAMESPACE::gzstreambuf::~gzstreambuf" alt="" coords="1155,112,1525,141"/>
+</map>

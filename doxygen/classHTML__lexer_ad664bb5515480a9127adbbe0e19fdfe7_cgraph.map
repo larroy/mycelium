@@ -1,0 +1,51 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classHTML__lexer.html#a3911266603d7910ce0de77ad113c39be" title="HTML_lexer::op_a" alt="" coords="252,1118,385,1147"/>
+<area shape="rect" id="node64" href="$classHTML__lexer.html#a117ed5f483bbb315c6b13d19ea3c745d" title="HTML_lexer::op_a_c" alt="" coords="245,1171,392,1200"/>
+<area shape="rect" id="node69" href="$classHTML__lexer.html#afed77cd433793869bcc231254f08a7bb" title="HTML_lexer::op_body" alt="" coords="240,1382,397,1411"/>
+<area shape="rect" id="node71" href="$classHTML__lexer.html#a34307818e28ad92e7b7d3f656c579f53" title="HTML_lexer::word_break" alt="" coords="483,1316,659,1346"/>
+<area shape="rect" id="node77" href="$classHTML__lexer.html#a5f10044d72a5263b971173cad0f9cfb7" title="HTML_lexer::op_body_c" alt="" coords="233,1435,404,1464"/>
+<area shape="rect" id="node79" href="$classHTML__lexer.html#a987533e0af20d8df7d4c2a66fcf6a698" title="HTML_lexer::op_frame" alt="" coords="237,1224,400,1254"/>
+<area shape="rect" id="node83" href="$classHTML__lexer.html#a7fa117deed85dfffbb20c37df5f32501" title="HTML_lexer::op_frame_c" alt="" coords="229,1278,408,1307"/>
+<area shape="rect" id="node87" href="$classHTML__lexer.html#aa6b020994fe327ed0568729104a4fb6c" title="HTML_lexer::op_link" alt="" coords="497,960,644,990"/>
+<area shape="rect" id="node112" href="$classHTML__lexer.html#ab82e184e4fe4ef57a7448f46e32547a9" title="HTML_lexer::op_link_c" alt="" coords="239,1488,399,1518"/>
+<area shape="rect" id="node114" href="$classHTML__lexer.html#a358fb4b26dffea283c803b09af729ae4" title="HTML_lexer::op_meta" alt="" coords="239,1064,399,1094"/>
+<area shape="rect" id="node121" href="$classHTML__lexer.html#a543217e076e69629114640dc4e59446d" title="HTML_lexer::op_script" alt="" coords="239,1542,399,1571"/>
+<area shape="rect" id="node123" href="$classHTML__lexer.html#a6cda5ce63175405035d23ea07363b309" title="HTML_lexer::op_script_c" alt="" coords="232,1595,405,1624"/>
+<area shape="rect" id="node125" href="$classHTML__lexer.html#a1b8b777686cea50ac5092d3b77d2dc1c" title="HTML_lexer::op_style" alt="" coords="241,1648,396,1678"/>
+<area shape="rect" id="node127" href="$classHTML__lexer.html#a3810925dfff6fff4d53bf82c9861acec" title="HTML_lexer::op_style_c" alt="" coords="233,1702,404,1731"/>
+<area shape="rect" id="node129" href="$classHTML__lexer.html#ac75860c859514189cd9e4a2fea1cda3a" title="HTML_lexer::op_title" alt="" coords="244,1755,393,1784"/>
+<area shape="rect" id="node131" href="$classHTML__lexer.html#a6191c9dcf4a1d169d50b952b40457093" title="HTML_lexer::op_title_c" alt="" coords="237,1808,400,1838"/>
+<area shape="rect" id="node5" href="$classHTML__lexer.html#a9cd6afa6d3a5b41bcf37e38e39b72c85" title="HTML_lexer::link_add" alt="" coords="493,1118,648,1147"/>
+<area shape="rect" id="node7" href="$classUrl.html#abf9fc4fd9ccedd922229d9b8316975c8" title="Url::absolute" alt="" coords="1053,1118,1155,1147"/>
+<area shape="rect" id="node9" href="$structlink.html#a04edd1b87d4c359099d54902b8b90c61" title="link::clear" alt="" coords="811,1224,893,1254"/>
+<area shape="rect" id="node11" href="$classUrl.html#a91174ba77e66ccf1ea7322007af02085" title="Merge with a relative reference transform a relative referecence u into the target url see [RFC3986 P..." alt="" coords="795,807,909,836"/>
+<area shape="rect" id="node52" href="$classUrl.html#a76bbf385529e5fceb18f61917e9471df" title="Url::normalize" alt="" coords="797,1171,907,1200"/>
+<area shape="rect" id="node62" href="$classUrl.html#aa9425db68493bb2119f5817f1cb78044" title="Url::to_string" alt="" coords="800,1066,904,1095"/>
+<area shape="rect" id="node14" href="$classUrl.html#a2add036691aa47e378bd50518b711921" title="Url::authority" alt="" coords="1259,239,1363,268"/>
+<area shape="rect" id="node16" href="$classUrl.html#aff1b62caf99c887a3751d4458dde9d54" title="Url::clear" alt="" coords="1065,1014,1143,1043"/>
+<area shape="rect" id="node18" href="$classUrl.html#a0c5e1268a0bf53d45fd7888ab94a421c" title="Url::clear_fragment" alt="" coords="1239,974,1383,1003"/>
+<area shape="rect" id="node20" href="$classUrl.html#a5aa0250f60094694d560a6f85584b4c1" title="Url::clear_query" alt="" coords="1249,1052,1372,1082"/>
+<area shape="rect" id="node24" href="$classPath.html#ad413fcb7c6c703e711d4be9b8cf91bf4" title="Path::empty" alt="" coords="1261,858,1360,887"/>
+<area shape="rect" id="node26" href="$classUrl.html#ae0259b5b5faf9ec902f8d48702bcf8a0" title="Url::fragment" alt="" coords="1257,34,1364,63"/>
+<area shape="rect" id="node28" href="$classUrl.html#a1364a6b7d6870fc534214d334d817bc1" title="Url::has_authority" alt="" coords="1244,468,1377,498"/>
+<area shape="rect" id="node30" href="$classUrl.html#a682021483ab8316c17cc458288b9fefb" title="Url::has_fragment" alt="" coords="1036,648,1172,678"/>
+<area shape="rect" id="node32" href="$classUrl.html#a8619c64fc36c464a23a49ca7e3143e36" title="Url::has_query" alt="" coords="1047,702,1161,731"/>
+<area shape="rect" id="node34" href="$classUrl.html#aa38be2a698c2578cf57726ce144fc05f" title="Url::has_scheme" alt="" coords="1040,755,1168,784"/>
+<area shape="rect" id="node36" href="$classPath.html#abb0aab7616d207c8277e6a7a8f0dabb5" title="Path::merge" alt="" coords="1055,910,1153,939"/>
+<area shape="rect" id="node39" href="$classUrl.html#a683e26b13e82509aaa8f50600c55f2aa" title="Url::path" alt="" coords="1272,160,1349,190"/>
+<area shape="rect" id="node41" href="$classUrl.html#a24e6bb9383207117e9fbf7465e257573" title="Url::query" alt="" coords="1269,366,1352,395"/>
+<area shape="rect" id="node43" href="$classUrl.html#a12638d2d3cdd50c77da18a1748ae8cef" title="Url::scheme" alt="" coords="1261,596,1360,626"/>
+<area shape="rect" id="node45" href="$classUrl.html#a1b45ca4bf5d4b46de5e0194f2d7ca0fe" title="Url::syntax_ok" alt="" coords="1048,494,1160,523"/>
+<area shape="rect" id="node54" href="$classUrl.html#a87de26abf6dd37d40ba086f7260c0b28" title="Url::normalize_escapes" alt="" coords="1019,1278,1189,1307"/>
+<area shape="rect" id="node56" href="$classUrl.html#aa71a553fcb546a78c50bd22ccb9ca8e5" title="Url::normalize_host" alt="" coords="1031,1331,1177,1360"/>
+<area shape="rect" id="node58" href="$classUrl.html#adbd34dc0393e6d7cda6392e871624950" title="Remove dot segments." alt="" coords="1031,1171,1177,1200"/>
+<area shape="rect" id="node60" href="$classUrl.html#affcef6c63ff9f9b5d7cf8b4e66f52fb2" title="Url::normalize_scheme" alt="" coords="1020,1224,1188,1254"/>
+<area shape="rect" id="node66" href="$classHTML__lexer.html#a9791b42f14c924d46f3a47e315bac3c7" title="HTML_lexer::submit_link" alt="" coords="484,1198,657,1227"/>
+<area shape="rect" id="node73" href="$classHTML__lexer.html#a3c06ad6ebdc739a1d1d4aa6c2bd265b1" title="HTML_lexer::link_text_word_break" alt="" coords="735,1356,969,1386"/>
+<area shape="rect" id="node75" href="$classHTML__lexer.html#a11984e33bcb008ba9733ac75ebd1f9c6" title="HTML_lexer::text_word_break" alt="" coords="748,1303,956,1332"/>
+<area shape="rect" id="node90" href="$classUrl.html#a9e8094f76d12747025b259630b8a911b" title="Url::get" alt="" coords="817,290,887,319"/>
+<area shape="rect" id="node107" href="$classHTML__lexer.html#a3960a79185eec6f643b34b2fb1fe550d" title="HTML_lexer::tag_map" alt="" coords="772,1012,932,1042"/>
+<area shape="rect" id="node110" href="$classHTML__lexer.html#a317347993dec7e450d9dab2dedebe010" title="HTML_lexer::warn" alt="" coords="785,754,919,783"/>
+<area shape="rect" id="node98" href="$classUrl.html#aeb96c1f449e5e752b3364f6c5072aa5d" title="Url::size" alt="" coords="1068,187,1140,216"/>
+<area shape="rect" id="node117" href="$classHTML__lexer.html#a6bdf24eb9a688b99f558989a58172e0c" title="HTML_lexer::meta_name_robots" alt="" coords="456,1064,685,1094"/>
+</map>

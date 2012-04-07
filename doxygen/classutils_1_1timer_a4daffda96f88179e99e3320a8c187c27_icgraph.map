@@ -1,0 +1,9 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classutils_1_1timer.html#aea75dc66b631bdd4ff73ef14595c0372" title="utils::timer::current" alt="" coords="221,5,365,35"/>
+<area shape="rect" id="node5" href="$classutils_1_1timer.html#a030107d2122d6044a46e014b0df0e609" title="utils::timer::from_milliseconds" alt="" coords="187,59,400,88"/>
+<area shape="rect" id="node7" href="$classutils_1_1timer.html#adcabf00f31f17e419f56fb8b8babe8c3" title="utils::timer::from_seconds" alt="" coords="200,112,387,141"/>
+<area shape="rect" id="node9" href="$classutils_1_1timer.html#ad91256eae1055a91bdd31259d6964c48" title="utils::timer::operator*" alt="" coords="213,165,373,195"/>
+<area shape="rect" id="node11" href="$classutils_1_1timer.html#a91df7e12b5bf599ca0a5cfb09afcb91a" title="utils::timer::operator+" alt="" coords="212,219,375,248"/>
+<area shape="rect" id="node13" href="$classutils_1_1timer.html#aea8dd47bbbb8cb09c333e4cda469637e" title="utils::timer::operator&#45;" alt="" coords="215,272,372,301"/>
+<area shape="rect" id="node15" href="$classutils_1_1timer.html#a24bee1aa3255b7f70699a7e39fc97996" title="utils::timer::operator/" alt="" coords="215,325,372,355"/>
+</map>

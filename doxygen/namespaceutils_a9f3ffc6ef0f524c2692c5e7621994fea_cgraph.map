@@ -1,0 +1,5 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$namespaceutils.html#a3d251615d6cea14cf11174a5c3ff9f62" title="handler for system call errors, currently throws std::runtime_error" alt="" coords="348,29,449,59"/>
+<area shape="rect" id="node6" href="$namespaceutils.html#ad2648aa76952f25d26847353ca10c364" title="utils::Listen" alt="" coords="188,29,281,59"/>
+<area shape="rect" id="node9" href="$namespaceutils.html#a95043a5d5b10b77f98a93892a086d93a" title="utils::Setsockopt" alt="" coords="171,83,299,112"/>
+</map>

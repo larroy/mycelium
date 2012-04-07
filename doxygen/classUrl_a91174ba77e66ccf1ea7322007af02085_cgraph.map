@@ -1,0 +1,28 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classUrl.html#abf9fc4fd9ccedd922229d9b8316975c8" title="Url::absolute" alt="" coords="183,5,284,35"/>
+<area shape="rect" id="node5" href="$classUrl.html#a2add036691aa47e378bd50518b711921" title="Url::authority" alt="" coords="181,59,285,88"/>
+<area shape="rect" id="node7" href="$classUrl.html#aff1b62caf99c887a3751d4458dde9d54" title="Url::clear" alt="" coords="195,112,272,141"/>
+<area shape="rect" id="node13" href="$classUrl.html#a0c5e1268a0bf53d45fd7888ab94a421c" title="Url::clear_fragment" alt="" coords="348,136,492,165"/>
+<area shape="rect" id="node15" href="$classUrl.html#a5aa0250f60094694d560a6f85584b4c1" title="Url::clear_query" alt="" coords="359,189,481,219"/>
+<area shape="rect" id="node19" href="$classPath.html#ad413fcb7c6c703e711d4be9b8cf91bf4" title="Path::empty" alt="" coords="765,347,864,376"/>
+<area shape="rect" id="node21" href="$classUrl.html#ae0259b5b5faf9ec902f8d48702bcf8a0" title="Url::fragment" alt="" coords="180,869,287,899"/>
+<area shape="rect" id="node23" href="$classUrl.html#a1364a6b7d6870fc534214d334d817bc1" title="Url::has_authority" alt="" coords="353,608,487,637"/>
+<area shape="rect" id="node25" href="$classUrl.html#a682021483ab8316c17cc458288b9fefb" title="Url::has_fragment" alt="" coords="747,647,883,676"/>
+<area shape="rect" id="node27" href="$classUrl.html#a8619c64fc36c464a23a49ca7e3143e36" title="Url::has_query" alt="" coords="757,777,872,807"/>
+<area shape="rect" id="node29" href="$classUrl.html#aa38be2a698c2578cf57726ce144fc05f" title="Url::has_scheme" alt="" coords="169,923,297,952"/>
+<area shape="rect" id="node31" href="$classPath.html#abb0aab7616d207c8277e6a7a8f0dabb5" title="Path::merge" alt="" coords="371,293,469,323"/>
+<area shape="rect" id="node36" href="$classUrl.html#a683e26b13e82509aaa8f50600c55f2aa" title="Url::path" alt="" coords="381,347,459,376"/>
+<area shape="rect" id="node39" href="$classUrl.html#a24e6bb9383207117e9fbf7465e257573" title="Url::query" alt="" coords="379,661,461,691"/>
+<area shape="rect" id="node41" href="$classUrl.html#a12638d2d3cdd50c77da18a1748ae8cef" title="Url::scheme" alt="" coords="371,715,469,744"/>
+<area shape="rect" id="node43" href="$classUrl.html#a1b45ca4bf5d4b46de5e0194f2d7ca0fe" title="Url::syntax_ok" alt="" coords="177,501,289,531"/>
+<area shape="rect" id="node9" href="$classPath.html#a3e94fc24f7c713442f3d52478d0772fb" title="Path::clear" alt="" coords="376,29,464,59"/>
+<area shape="rect" id="node11" href="$classUrl.html#ae11f110de50619d525cdafa3ca16cc9b" title="Url::clear_authority" alt="" coords="349,83,491,112"/>
+<area shape="rect" id="node34" href="$classPath.html#a4177233bcd196af656915eb1ec8852c6" title="Path::get" alt="" coords="575,345,652,375"/>
+<area shape="rect" id="node45" href="$classPath.html#ad4c44d66f5e0b4282f873a3103662724" title="Path::absolute" alt="" coords="364,501,476,531"/>
+<area shape="rect" id="node49" href="$classUrl.html#a1c8d1fbba20edf7ca1aea8da20fe836d" title="Url::host" alt="" coords="576,476,651,505"/>
+<area shape="rect" id="node54" href="$classUrl.html#a93230a3064d5e1a0ede6a8051c294731" title="Url::valid_host" alt="" coords="364,555,476,584"/>
+<area shape="rect" id="node56" href="$classUrl.html#a1f07cd4a3fe2c6a756eb0179fe56a717" title="Url::empty" alt="" coords="569,608,657,637"/>
+<area shape="rect" id="node62" href="$classUrl.html#af4d633bec739e96865cc04d192aa20c5" title="Url::unescape_safe" alt="" coords="541,555,685,584"/>
+<area shape="rect" id="node64" href="$namespaceutils.html#ae5daf5bd09c6e1492820ecaaa3211deb" title="Convert 2 hexadecimal digits to number." alt="" coords="735,555,895,584"/>
+<area shape="rect" id="node66" href="$namespaceutils.html#a9a25244212a8cbba065981ebd240a604" title="Convert an hexadecimal digit to number between 0 and 15." alt="" coords="944,555,1091,584"/>
+</map>

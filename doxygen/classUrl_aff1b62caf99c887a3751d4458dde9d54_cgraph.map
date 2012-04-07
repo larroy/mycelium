@@ -1,0 +1,6 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classPath.html#a3e94fc24f7c713442f3d52478d0772fb" title="Path::clear" alt="" coords="163,5,251,35"/>
+<area shape="rect" id="node5" href="$classUrl.html#ae11f110de50619d525cdafa3ca16cc9b" title="Url::clear_authority" alt="" coords="136,59,277,88"/>
+<area shape="rect" id="node7" href="$classUrl.html#a0c5e1268a0bf53d45fd7888ab94a421c" title="Url::clear_fragment" alt="" coords="135,112,279,141"/>
+<area shape="rect" id="node9" href="$classUrl.html#a5aa0250f60094694d560a6f85584b4c1" title="Url::clear_query" alt="" coords="145,165,268,195"/>
+</map>

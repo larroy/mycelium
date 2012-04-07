@@ -1,0 +1,11 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$classUrl.html#a76bbf385529e5fceb18f61917e9471df" title="Url::normalize" alt="" coords="201,139,311,168"/>
+<area shape="rect" id="node5" href="$classHTML__lexer.html#a9cd6afa6d3a5b41bcf37e38e39b72c85" title="HTML_lexer::link_add" alt="" coords="360,59,515,88"/>
+<area shape="rect" id="node17" href="$structDoc.html#afcaa8f22ba09bae0898d81bc5a9d401f" title="Doc::load_url" alt="" coords="385,112,489,141"/>
+<area shape="rect" id="node19" href="$classHTML__lexer.html#aa6b020994fe327ed0568729104a4fb6c" title="HTML_lexer::op_link" alt="" coords="572,165,719,195"/>
+<area shape="rect" id="node22" href="$classUrl.html#ab07a88039251d2d0e51ca1967ddd4c6a" title="Url::operator==" alt="" coords="375,216,500,245"/>
+<area shape="rect" id="node7" href="$classHTML__lexer.html#a3911266603d7910ce0de77ad113c39be" title="HTML_lexer::op_a" alt="" coords="579,5,712,35"/>
+<area shape="rect" id="node11" href="$classHTML__lexer.html#a987533e0af20d8df7d4c2a66fcf6a698" title="HTML_lexer::op_frame" alt="" coords="564,59,727,88"/>
+<area shape="rect" id="node14" href="$classHTML__lexer.html#a358fb4b26dffea283c803b09af729ae4" title="HTML_lexer::op_meta" alt="" coords="565,112,725,141"/>
+<area shape="rect" id="node9" href="$classHTML__lexer.html#ad664bb5515480a9127adbbe0e19fdfe7" title="Constructor." alt="" coords="776,85,952,115"/>
+</map>
