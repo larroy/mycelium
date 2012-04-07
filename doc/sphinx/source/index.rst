@@ -13,6 +13,7 @@ Contents:
 
     intro
     crawler
+    local_indexer
     html_lexer
     stemmer
 

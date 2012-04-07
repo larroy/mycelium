@@ -1,32 +1,7 @@
 The Mycelium Information retrieval system
 =========================================
 
-<pre>
-   ,---------.       +-----------+
- .(           )      |           |
-(   Interwebs..)  <--|  crawler  |--->  MongoDB
- (_         ___)     |           |      mycelium.crawl
-   \.------.)        +-----------+
-
-</pre>
-
-This is a high performance web crawler which uses asyncrhonous IO through
-libevent so it can handle thousands of connections; addresses the [C10K problem](
-http://www.kegel.com/c10k.html).
-
-It handles robots.txt. It mantains a single session per dns host, so it can
-crawl thousands of hosts in parallel without hammering the same host.
-
-It listens on a tcp socket for urls to crawl. (By default port 1024)
-
-It saves the crawled documents to mongodb.
-
-It's highly recommended to use curl compiled with asyncrhonous DNS (libares),
-otherwise DNS resolving inside curl will block the program.
-
-There's also utilities for indexing local content, currently it only handles
-PDF files which are converted to text with pdftotext:
-    dists/local_index.py
+Check the latest up-to-date user documentation in http://pedro.larroy.com/mycelium/sphinx/
 
 For the impatient
 -----------------
@@ -75,66 +50,11 @@ Running
     MYCELIUM_DB_HOST: mongodb host for storing the documents, default is "localhost"
     MYCELIUM_DB_NS: database.collection, defaults to "mycelium.crawl"
 
-Example / Screenshots:
-----------------------
-
-Start the crawler:
-
-<pre>
-piotr@gomasio:130:~/devel/mycelium$ build/release/crawler
-log4cxx: Large window sizes are not allowed.
-2011-11-23 00:43:14,481 - INFO  crawlog - Initializing system...
-down: 0.00 iB 0.00 KB/s
-down: 0.00 iB 0.00 KB/s
-</pre>
-
-The status gets printed every few seconds, displaying the total amount
-downloaded and the current download speed.
-
-Now you can start downloading urls by sending them to the control socket:
-
-<code>
-zcat feeds.txt.gz | nc localhost 1024
-</code>
-
-
-<pre>
-2011-11-23 00:54:11,408 - INFO  crawlog - handle id: 0 retrieving robots: slashdot.org
-down: 0.00 iB 0.00 KB/s
-2011-11-23 00:54:11,838 - INFO  crawlog - handle id: 0 DONE: http://slashdot.org/robots.txt HTTP 200
-2011-11-23 00:54:11,838 - INFO  crawlog - handle id: 0 retrieving content: slashdot.org
-2011-11-23 00:54:13,777 - INFO  crawlog - handle id: 0 DONE: http://slashdot.org/ HTTP 200
-</pre>
-
-Interactive commands
---------------------
-
-There are a few interactive commands for debug and diagnosis, typing help on
-stdin shows them:
-
-<pre>
-help
-on_read_interactive_cb: read: 5
-commands: qlen dumpq reschedule status help quit
-down: 0.00 iB 0.00 KB/s
-</pre>
-
-- qlen: Shows the amount of urls in the queue distributor, total, and per host
-- dumpq: Show the urls in the queues
-- reschedule: To force IDLE handles back to work, should not be any need to use
-  this unless curl malfunctions, which happened with some versions of curl
-- status: Show the status of the internal curl handlers
-- quit: obvious
-
-Building
-========
-
-Execute:
-
-scons
-
 Dependencies
 ============
+
+The software is build on debian / ubuntu systems, although it should be fairly
+easy to port to other platforms.
 
 Some (might be incomplete) list of libraries that are required:
 
