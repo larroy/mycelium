@@ -95,7 +95,7 @@ BOOST_PYTHON_MODULE_INIT(common)
     def("escape_reserved_unsafe", &Url::escape_reserved_unsafe);
     def("unescape_all", unescape_all);
 
-	def("html_lex", html_lex);
+	def("html_lex", html_lex, "Parse an HTML document, first arg is the HTML content as a string, and the second is the url of this document, needed to resolve relative links");
 	class_<Analysis>("Analysis")
 		.def_readwrite("title", &Analysis::title, "title of the page")
 		.def_readwrite("rss2", &Analysis::rss2)

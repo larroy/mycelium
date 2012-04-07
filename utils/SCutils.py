@@ -84,6 +84,7 @@ def setup_quiet_build(env, colorblind=False):
     env['ARCOMSTR']    = link_lib_msg
     env['SHLINKCOMSTR'] = link_shared_library_msg
     env['LINKCOMSTR']  = link_program_msg
+    env['LDMODULECOMSTR']  = link_program_msg
     env['RANLIBCOMSTR']= ranlib_library_msg
     env['GCHCOMSTR'] = pch_compile
 

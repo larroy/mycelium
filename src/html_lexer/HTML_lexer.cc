@@ -60,12 +60,11 @@ HTML_lexer::HTML_lexer(std::istream* i, std::ostream* txtout, const std::string*
 
 	// tag ops
 	// boost::function<void()> fnb = boost::bind(&Test::f,this);
-	if (get_text_if_body_tag_only)
-		stag_op.insert(make_pair("body",boost::bind(&HTML_lexer::op_body,this)));
-	else	
+	if (! get_text_if_body_tag_only)
 		flags.set(FLAG_GET_TEXT);
 
 
+	stag_op.insert(make_pair("body",boost::bind(&HTML_lexer::op_body,this)));
 	stag_op.insert(make_pair("a",boost::bind(&HTML_lexer::op_a,this)));
 	stag_op.insert(make_pair("frame",boost::bind(&HTML_lexer::op_frame,this)));
 	stag_op.insert(make_pair("iframe",boost::bind(&HTML_lexer::op_frame,this)));
@@ -596,6 +595,7 @@ void HTML_lexer::op_frame_c()
 void HTML_lexer::op_body()
 {
 	flags.set(FLAG_GET_TEXT);
+	word_break();
 }
 
 void HTML_lexer::op_body_c()

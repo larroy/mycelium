@@ -69,6 +69,7 @@ if SCutils.has_option('glibcxx_debug'):
 
 ccflags = [
     '-Wall',
+    '-Wno-deprecated-declarations',
     '-march=native',
 #    '-Wno-deprecated',
     '-Winvalid-pch',
@@ -205,27 +206,6 @@ env = configure.Finish()
 
 
 
-###########################################
-# Python shared lib compile environment
-
-pyenv = env.Clone(
-    SHLIBPREFIX = '',)
-#    LIBS = [
-#        'boost_python',
-#        'boost_regex',
-#        'boost_filesystem',
-#    ])
-
-#conf = Configure(pyenv)
-
-pyenv.Append(CPPDEFINES=['EXPORT_PYTHON_INTERFACE'], CPPPATH=[BOOST_PYTHON_INC])
-pyenv['PYTHON_SHARED_INSTALL'] = Dir(PYTHON_SHARED_INSTALL).get_abspath()
-pyenv.Alias('install', pyenv['PYTHON_SHARED_INSTALL'])
-
-###########################################
-
-
-
 
 ############################################################################
 # Flex builder
@@ -264,6 +244,28 @@ env['crawler_sources'] = utils.findall('src/crawler', '*.cc', 1)
 env['unit_tests_sources'] = utils.findall('src/unit_tests', '*.cc', 1)
 env['local_indexer_sources'] = utils.findall('src/local_indexer', '*.cc', 1)
 env['html_lexer_sources'] = utils.findall('src/html_lexer', '*.cc', 1)
+
+
+
+###########################################
+# Python shared lib compile environment
+
+pyenv = env.Clone(
+    SHLIBPREFIX = '',)
+#    LIBS = [
+#        'boost_python',
+#        'boost_regex',
+#        'boost_filesystem',
+#    ])
+
+#conf = Configure(pyenv)
+
+pyenv.Append(CPPDEFINES=['EXPORT_PYTHON_INTERFACE'], CPPPATH=[BOOST_PYTHON_INC])
+pyenv['PYTHON_SHARED_INSTALL'] = Dir(PYTHON_SHARED_INSTALL).get_abspath()
+pyenv.Alias('install', pyenv['PYTHON_SHARED_INSTALL'])
+
+###########################################
+
 
 
 
