@@ -49,61 +49,44 @@
 #include "Url.hh"
 
 namespace content_type {
-	typedef enum content_type_t {
-		//
-		UNSET=0,
-		// No Content-type header
-		NONE, 
-		// Content-type header that we aren't interested
-		UNRECOGNIZED,
-		// text/html
-		TEXT_HTML,
-		// application/xhtml+xml
-		APP_XHTML,
-		// application/rss+xml
-		APP_RSS_XML,
-		// application/atom+xml
-		APP_ATOM_XML,
-		// text/xml
-		TEXT_XML,
-		// text/plain
-		TEXT_PLAIN,
-		// application/pdf
-		APPLICATION_PDF,
+    typedef enum content_type_t {
+        UNSET=0,
 
-		// Empty file, used for local files 
-		EMPTY,
+        // No Content-type header
+        NONE, 
 
-		FILE_DIRECTORY,
-#if 0		
-		/*
-		 *    feed
-		 *    | item 
-		 *    | |
-		 *    | ||vid
-		 *    | |||aud
-		 *    | ||||
-		 * 000x 000x
-		 */
-		WEB_FEED				=0x10,
-		WEB_FEED_WITH_AUDIO		=0x11,
-		WEB_FEED_WITH_VIDEO		=0x12,
-		WEB_FEED_ITEM			=0x18,
-		WEB_FEED_ITEM_WITH_AUDIO=0x19,
-		WEB_FEED_ITEM_WITH_VIDEO=0x1a,
-#endif		
-//		FILE_TEXT_ASCII,
-//		FILE_TEXT_LATIN1,
-//		FILE_TEXT_EXTENDED,
-//		FILE_TEXT_UTF8,
-//		FILE_TEXT_UTF16LE,
-//		FILE_TEXT_UTF16BE,
-//		FILE_TEXT_UTF32LE,
-//		FILE_TEXT_UTF32BE,
-//		FILE_UNRECOGNIZED,
-		MAX
-	} content_type_t;
-};	
+        // Content-type header that we aren't interested
+        UNRECOGNIZED,
+
+        // text/html
+        TEXT_HTML,
+
+        // application/xhtml+xml
+        XHTML,
+
+        // application/rss+xml
+        RSS_XML,
+
+        // application/atom+xml
+        ATOM_XML,
+
+        // text/xml
+        TEXT_XML,
+
+        // text/plain
+        TEXT_PLAIN,
+
+        // application/pdf
+        APPLICATION_PDF,
+
+        FILE_DIRECTORY,
+
+        // Empty file, used for local files 
+        EMPTY,
+
+        CONTENT_TYPE_MAX
+    } content_type_t;
+};    
 
 
 /**
@@ -116,11 +99,11 @@ void parse_headers(const std::string& headers, content_type::content_type_t& con
 
 struct link {
     std::string url;
-	std::string	txt;
+    std::string    txt;
 //    std::list<std::string> words;
     link() : url(), txt() {}
-	void clear() { url.clear(); txt.clear(); }
-	operator bool() const { return ! url.empty(); }
+    void clear() { url.clear(); txt.clear(); }
+    operator bool() const { return ! url.empty(); }
 };
 
 
@@ -131,22 +114,22 @@ std::ostream& operator<<(std::ostream& os, const struct link& l);
 /// Meta information resulting from lexical analysis
 class Analysis {
 public:
-	Analysis() :
-		title(),
-		rss2(),
-		rss(),
-		atom(),
-		charset(),
-		index(true),
-		follow(true)
-	{}
-	std::string title;
-	std::string rss2;
-	std::string rss;
-	std::string atom;
-	std::string charset;
-	bool index;
-	bool follow;
+    Analysis() :
+        title(),
+        rss2(),
+        rss(),
+        atom(),
+        charset(),
+        index(true),
+        follow(true)
+    {}
+    std::string title;
+    std::string rss2;
+    std::string rss;
+    std::string atom;
+    std::string charset;
+    bool index;
+    bool follow;
 
 };
 
@@ -159,13 +142,13 @@ public:
  * Sgml entities are decomposed in tokens, for example the tag &lt;a href="http..." lang=es&gt;
  * will produce:
  *
- *	SGML_START a (with &lt; and space, etc removed)
+ *    SGML_START a (with &lt; and space, etc removed)
  *
- *	SGML_ATTRNAME href  (with = removed)
+ *    SGML_ATTRNAME href  (with = removed)
  *
- *	SGML_LITERAL "http..."
+ *    SGML_LITERAL "http..."
  *
- *	SGM_TAGC
+ *    SGM_TAGC
  *
  * Tokens get pushed into a vector, then some instructions call HTML_lexer::process()
  *
@@ -180,139 +163,139 @@ public:
 class HTML_lexer:public yyFlexLexer 
 {
 private:
-	HTML_lexer(const HTML_lexer&);
-	void operator=(const HTML_lexer&);
+    HTML_lexer(const HTML_lexer&);
+    void operator=(const HTML_lexer&);
 
 public:
-	/**
-	 * @brief Constructor
-	 * @param[in] in istream with the HTML data to parse
-	 * @param[out] txtout if it's not NULL, textual representation would be written to this stream
+    /**
+     * @brief Constructor
+     * @param[in] in istream with the HTML data to parse
+     * @param[out] txtout if it's not NULL, textual representation would be written to this stream
      * @param[in] base_url if it's not NULL it should be an absolute url to resolve
      * the relative links of the document to absolute urls
      * @param[out] lnkout if it's not NULL links will be written to this stream, one link per line
-	 * @param[out] warnings if it's not NULL any warnings will be written to this stream
-	 * @param[in] analysis if it's not NULL will be set with meta information about document, such as related feeds, title, etc 
+     * @param[out] warnings if it's not NULL any warnings will be written to this stream
+     * @param[in] analysis if it's not NULL will be set with meta information about document, such as related feeds, title, etc 
      * @param get_text_if_body_tag_only might be scripts or any bizarre stuff before the body tag, that we don't want. Also if it doesn't contain body it might be garbage
-	 */
-	HTML_lexer(std::istream* in, std::ostream* txtout, const std::string* base_url=0, std::ostream* lnkout=0, std::ostream* warnings = 0, Analysis* analysis=0, bool get_text_if_body_tag_only=true);
+     */
+    HTML_lexer(std::istream* in, std::ostream* txtout, const std::string* base_url=0, std::ostream* lnkout=0, std::ostream* warnings = 0, Analysis* analysis=0, bool get_text_if_body_tag_only=true);
 
-	/// Change input stream, etc.
-	HTML_lexer& reset(std::istream* i, std::ostream* txtout, const std::string* base_url=0, std::ostream* lnkout=0, std::ostream* warnings = 0,  Analysis* analysis=0, bool get_text_if_body_tag_only=true);
+    /// Change input stream, etc.
+    HTML_lexer& reset(std::istream* i, std::ostream* txtout, const std::string* base_url=0, std::ostream* lnkout=0, std::ostream* warnings = 0,  Analysis* analysis=0, bool get_text_if_body_tag_only=true);
 
-	/// Process it @return 0 on success -1 on failure
-	int yylex();
+    /// Process it @return 0 on success -1 on failure
+    int yylex();
 
 protected:
-	/// SGML types of token
-	enum SGML_tok_t {
-	  SGML_EOF,
-	  SGML_DATA, SGML_START, SGML_END, SGML_TAGC, //4
-	  SGML_ATTRNAME, SGML_NAME, SGML_NUMBER, SGML_NMTOKEN, SGML_LITERAL, //9
-	  SGML_GEREF, SGML_NUMCHARREF, SGML_REFC, // not used, currently we use a regex perhaps, depending on speed
-	  SGML_PI,
-	  SGML_MARKUP_DECL, SGML_COMMENT,
-	  SGML_LIMITATION, SGML_ERROR, SGML_WARNING,
-	  SGML_MAXTOK
-	};
+    /// SGML types of token
+    enum SGML_tok_t {
+      SGML_EOF,
+      SGML_DATA, SGML_START, SGML_END, SGML_TAGC, //4
+      SGML_ATTRNAME, SGML_NAME, SGML_NUMBER, SGML_NMTOKEN, SGML_LITERAL, //9
+      SGML_GEREF, SGML_NUMCHARREF, SGML_REFC, // not used, currently we use a regex perhaps, depending on speed
+      SGML_PI,
+      SGML_MARKUP_DECL, SGML_COMMENT,
+      SGML_LIMITATION, SGML_ERROR, SGML_WARNING,
+      SGML_MAXTOK
+    };
 
-	static std::string sgml_tok_xlate(enum SGML_tok_t tok);
-	void warn(const char* warning, const char* str, int len);
-	void warn(const char* warning);
-	void warn(const std::string& warning);
-
-
-	/// A token, tags, are subdivided in tokens
-	struct Token {
-		SGML_tok_t type;
-		std::string	content;
-		Token(): type(),content() {}
-		Token(SGML_tok_t t, std::string c): type(t), content(c) {}
-	};
-
-	friend std::ostream& operator <<(std::ostream& os, const struct Token& t);
+    static std::string sgml_tok_xlate(enum SGML_tok_t tok);
+    void warn(const char* warning, const char* str, int len);
+    void warn(const char* warning);
+    void warn(const std::string& warning);
 
 
-	typedef std::vector<struct Token> tokens_t;
-	typedef boost::function<void()> callback_t;
-	typedef std::tr1::unordered_map<std::string, callback_t> tag_op_t; 
+    /// A token, tags, are subdivided in tokens
+    struct Token {
+        SGML_tok_t type;
+        std::string    content;
+        Token(): type(),content() {}
+        Token(SGML_tok_t t, std::string c): type(t), content(c) {}
+    };
 
-	void link_add(const std::string& link);
-	void link_text_add(const std::string& text);
-	void link_text_word_break();
-	void submit_link();
-
-	void text_add(const std::string& text);
-	void text_word_break();
-
-	void finalize();
-
-	void addtoken(SGML_tok_t toktype, const char* str, int len, bool case_insensitive=false);
-	void process();
-
-	void tag_map(tokens_t& tok, std::map<std::string, std::string>& m);
+    friend std::ostream& operator <<(std::ostream& os, const struct Token& t);
 
 
-	tag_op_t stag_op;
-	tag_op_t ctag_op;
+    typedef std::vector<struct Token> tokens_t;
+    typedef boost::function<void()> callback_t;
+    typedef std::tr1::unordered_map<std::string, callback_t> tag_op_t; 
 
-	tokens_t tokens;
-	enum flag_t { 
-		/**
-		 * if set text will be indexed
-		 */
-		FLAG_GET_TEXT,
-		FLAG_GET_TITLE,
-		/**
-		 * Inside a link
-		 */
-		FLAG_INLINK,
-		FLAG_LINK_NOFOLLOW,
-		FLAGSIZE
-	};
+    void link_add(const std::string& link);
+    void link_text_add(const std::string& text);
+    void link_text_word_break();
+    void submit_link();
 
-	/**
-	 * toktype to char* array
-	 * for debug 
-	 */
-	static const char* toknames[];
+    void text_add(const std::string& text);
+    void text_word_break();
+
+    void finalize();
+
+    void addtoken(SGML_tok_t toktype, const char* str, int len, bool case_insensitive=false);
+    void process();
+
+    void tag_map(tokens_t& tok, std::map<std::string, std::string>& m);
+
+
+    tag_op_t stag_op;
+    tag_op_t ctag_op;
+
+    tokens_t tokens;
+    enum flag_t { 
+        /**
+         * if set text will be indexed
+         */
+        FLAG_GET_TEXT,
+        FLAG_GET_TITLE,
+        /**
+         * Inside a link
+         */
+        FLAG_INLINK,
+        FLAG_LINK_NOFOLLOW,
+        FLAGSIZE
+    };
+
+    /**
+     * toktype to char* array
+     * for debug 
+     */
+    static const char* toknames[];
 
 
 private:
-	bool normalize;
-	bool did_word_break;
-	std::ostream* txtout;
-	Url	base_url;
-	std::ostream* lnkout;
-	std::ostream* warnings;
-	Analysis* analysis;		
-	std::bitset<FLAGSIZE> flags;
-	struct link curlink;
-	
-	void op_a();
-	void op_a_c();
-	void op_link();
-	void op_link_c();
-	void op_meta();
-	void meta_name_robots(const std::string& content);
-	void op_body();
-	void op_body_c();
-	void op_frame();
-	void op_frame_c();
-	void op_script();
-	void op_script_c();
-	void op_style();
-	void op_style_c();
-	void op_title();
-	void op_title_c();
+    bool normalize;
+    bool did_word_break;
+    std::ostream* txtout;
+    Url    base_url;
+    std::ostream* lnkout;
+    std::ostream* warnings;
+    Analysis* analysis;        
+    std::bitset<FLAGSIZE> flags;
+    struct link curlink;
+    
+    void op_a();
+    void op_a_c();
+    void op_link();
+    void op_link_c();
+    void op_meta();
+    void meta_name_robots(const std::string& content);
+    void op_body();
+    void op_body_c();
+    void op_frame();
+    void op_frame_c();
+    void op_script();
+    void op_script_c();
+    void op_style();
+    void op_style_c();
+    void op_title();
+    void op_title_c();
 
-	/**
-	 * a new word is appended on the words vector
-	 * calls text_word_break or link_text_word_break
-	 */
-	void word_break();
-	Entity_handler entity_handler;
-	bool get_text_if_body_tag_only;
+    /**
+     * a new word is appended on the words vector
+     * calls text_word_break or link_text_word_break
+     */
+    void word_break();
+    Entity_handler entity_handler;
+    bool get_text_if_body_tag_only;
 
 };
 
@@ -327,22 +310,22 @@ std::ostream& operator<<(std::ostream& os, const struct HTML_lexer::Token& t);
  */
 class ProcHTML {
 public:
-	ProcHTML() :
-		base_url(),
-		text(),
-		links(),
-		warnings(),
-		analysis()
-	{}
+    ProcHTML() :
+        base_url(),
+        text(),
+        links(),
+        warnings(),
+        analysis()
+    {}
     /// The supplied base_url
-	std::string base_url;
+    std::string base_url;
     /// Raw text for this document
-	std::string text;
+    std::string text;
     /// Links for this HTML, one link per line
-	std::string links;
+    std::string links;
     /// Warnings during parsing
-	std::string warnings;
-	Analysis analysis;
+    std::string warnings;
+    Analysis analysis;
 };
 
 /**
@@ -371,7 +354,7 @@ inline HTML_lexer& HTML_lexer::reset(std::istream* i, std::ostream* txtout, cons
     this->analysis = analysis;
     this->get_text_if_body_tag_only = get_text_if_body_tag_only;
 
-    return *this;	
+    return *this;    
 }
 
 
