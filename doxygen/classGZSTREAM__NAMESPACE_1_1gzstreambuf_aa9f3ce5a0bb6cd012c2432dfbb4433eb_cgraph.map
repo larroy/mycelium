@@ -1,5 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$classGZSTREAM__NAMESPACE_1_1gzstreambuf.html#a5e8d9e3e3758d7594414f8e3a67f5cca" title="GZSTREAM_NAMESPACE::gzstreambuf::is_open" alt="" coords="367,5,692,35"/>
-<area shape="rect" id="node5" href="$classGZSTREAM__NAMESPACE_1_1gzstreambuf.html#a413ee12c09fb34c756dbdedebc6e3609" title="GZSTREAM_NAMESPACE::gzstreambuf::sync" alt="" coords="376,59,683,88"/>
-<area shape="rect" id="node7" href="$classGZSTREAM__NAMESPACE_1_1gzstreambuf.html#aa947d15edc65c43e7fb8b23cccbb1dd5" title="GZSTREAM_NAMESPACE::gzstreambuf::flush_buffer" alt="" coords="741,59,1093,88"/>
-</map>

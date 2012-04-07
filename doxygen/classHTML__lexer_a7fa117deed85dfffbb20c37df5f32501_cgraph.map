@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$classHTML__lexer.html#a9791b42f14c924d46f3a47e315bac3c7" title="HTML_lexer::submit_link" alt="" coords="233,5,407,35"/>
-<area shape="rect" id="node7" href="$classHTML__lexer.html#a34307818e28ad92e7b7d3f656c579f53" title="HTML_lexer::word_break" alt="" coords="232,59,408,88"/>
-<area shape="rect" id="node5" href="$structlink.html#a04edd1b87d4c359099d54902b8b90c61" title="link::clear" alt="" coords="533,5,616,35"/>
-<area shape="rect" id="node9" href="$classHTML__lexer.html#a3c06ad6ebdc739a1d1d4aa6c2bd265b1" title="HTML_lexer::link_text_word_break" alt="" coords="457,59,692,88"/>
-<area shape="rect" id="node11" href="$classHTML__lexer.html#a11984e33bcb008ba9733ac75ebd1f9c6" title="HTML_lexer::text_word_break" alt="" coords="471,112,679,141"/>
-</map>

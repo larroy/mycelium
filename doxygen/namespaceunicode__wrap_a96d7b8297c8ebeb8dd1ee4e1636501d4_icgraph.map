@@ -1,9 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$classEntity__handler.html#a8394436aaedcf1ee578a7ae5276b5e13" title="Entity_handler::dec_numchar_ref" alt="" coords="219,5,451,35"/>
-<area shape="rect" id="node11" href="$classEntity__handler.html#aedc19923a0242fd26a2db5d449c22c77" title="Entity_handler::Entity_handler" alt="" coords="229,59,440,88"/>
-<area shape="rect" id="node13" href="$classEntity__handler.html#a047cfc93500dd72303ca98f96dfcf425" title="Entity_handler::hex_numchar_ref" alt="" coords="219,112,451,141"/>
-<area shape="rect" id="node5" href="$classEntity__handler.html#ab01199171d5eb55884276fbc89c50949" title="Entity_handler::replace_dec_numchar_ref" alt="" coords="500,19,785,48"/>
-<area shape="rect" id="node7" href="$classEntity__handler.html#a5fa57113dbdde2584130c875b2dd3e9b" title="Entity_handler::replace_all_entities" alt="" coords="835,52,1077,81"/>
-<area shape="rect" id="node9" href="$classHTML__lexer.html#a4fcb9e537f19ebbb48826aacec7d1ac9" title="HTML_lexer::addtoken" alt="" coords="1125,52,1288,81"/>
-<area shape="rect" id="node15" href="$classEntity__handler.html#a1a419b2aadfe4d0f396460abc44198a7" title="Entity_handler::replace_hex_numchar_ref" alt="" coords="500,85,785,115"/>
-</map>

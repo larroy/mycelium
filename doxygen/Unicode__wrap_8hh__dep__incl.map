@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$Case__folder_8cc.html" title="src/html_lexer/Case_folder.cc" alt="" coords="5,83,213,112"/>
-<area shape="rect" id="node5" href="$Entity__handler_8cc.html" title="src/html_lexer/Entity_handler.cc" alt="" coords="237,83,461,112"/>
-<area shape="rect" id="node7" href="$HTML__lexer_8hh.html" title="src/html_lexer/HTML_lexer.hh" alt="" coords="485,83,693,112"/>
-<area shape="rect" id="node11" href="$Unicode__wrap_8cc.html" title="src/html_lexer/Unicode_wrap.cc" alt="" coords="717,83,939,112"/>
-<area shape="rect" id="node9" href="$HTML__lexer_8cc.html" title="src/html_lexer/HTML_lexer.cc" alt="" coords="487,160,692,189"/>
-</map>

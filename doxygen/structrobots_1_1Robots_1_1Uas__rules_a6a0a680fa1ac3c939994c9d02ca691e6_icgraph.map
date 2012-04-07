@@ -1,6 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$classrobots_1_1Robots.html#a12982f4f24d777b69cb5f50fe357ee3e" title="robots::Robots::clear" alt="" coords="301,5,453,35"/>
-<area shape="rect" id="node7" href="$classrobots_1_1Robots.html#a355b302483196a24e2214b251c5adcda" title="robots::Robots::eof" alt="" coords="307,59,448,88"/>
-<area shape="rect" id="node9" href="$classrobots_1_1Robots.html#aef6280be790f1986eee9ec9eb3997878" title="robots::Robots::reading_uas" alt="" coords="277,112,477,141"/>
-<area shape="rect" id="node5" href="$classrobots_1_1Robots.html#a540c5c3f58aca4e213962c967f64a54c" title="robots::Robots::reset" alt="" coords="525,5,680,35"/>
-</map>

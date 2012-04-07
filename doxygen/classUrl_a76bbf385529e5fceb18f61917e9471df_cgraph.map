@@ -1,8 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$classUrl.html#a87de26abf6dd37d40ba086f7260c0b28" title="Url::normalize_escapes" alt="" coords="165,5,336,35"/>
-<area shape="rect" id="node7" href="$classUrl.html#aa71a553fcb546a78c50bd22ccb9ca8e5" title="Url::normalize_host" alt="" coords="177,59,324,88"/>
-<area shape="rect" id="node9" href="$classUrl.html#adbd34dc0393e6d7cda6392e871624950" title="Remove dot segments." alt="" coords="177,112,324,141"/>
-<area shape="rect" id="node13" href="$classUrl.html#affcef6c63ff9f9b5d7cf8b4e66f52fb2" title="Url::normalize_scheme" alt="" coords="167,165,335,195"/>
-<area shape="rect" id="node5" href="$classUrl.html#a9191bd1e1ba1a355a9ef63766e5e3db3" title="Url::assign" alt="" coords="401,5,489,35"/>
-<area shape="rect" id="node11" href="$classPath.html#adf59ce5d6571078baff23d973bee2cc3" title="Path::normalize" alt="" coords="385,112,505,141"/>
-</map>

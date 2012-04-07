@@ -1,6 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$classbig__hash_1_1big__hash__bucket.html#a00f139df26f66e3fc3a52878e403081b" title="lock bucket" alt="" coords="301,5,528,35"/>
-<area shape="rect" id="node7" href="$classbig__hash_1_1big__hash__bucket.html#a1c1453e38da92964cdcc1309adfddc75" title="big_hash::big_hash_bucket::locked" alt="" coords="293,59,536,88"/>
-<area shape="rect" id="node9" href="$classbig__hash_1_1big__hash__bucket.html#a8b67516ae5feca2fce8271a327552e75" title="unlock bucket" alt="" coords="293,112,536,141"/>
-<area shape="rect" id="node5" href="$classbig__hash_1_1big__hash__bucket.html#a48f883f407e28205e9cce83fee5f72d9" title="big_hash::big_hash_bucket::get_lockfile" alt="" coords="585,5,857,35"/>
-</map>

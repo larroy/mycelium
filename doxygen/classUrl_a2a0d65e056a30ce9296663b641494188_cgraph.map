@@ -1,7 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$classUrl.html#a1f07cd4a3fe2c6a756eb0179fe56a717" title="Url::empty" alt="" coords="247,59,335,88"/>
-<area shape="rect" id="node11" href="$classUrl.html#aa47ef64a2a4530892e6c324b5399f7bd" title="Url::safe_bool_aux" alt="" coords="221,112,360,141"/>
-<area shape="rect" id="node5" href="$classPath.html#ad413fcb7c6c703e711d4be9b8cf91bf4" title="Path::empty" alt="" coords="428,5,527,35"/>
-<area shape="rect" id="node7" href="$classUrl.html#a682021483ab8316c17cc458288b9fefb" title="Url::has_fragment" alt="" coords="409,59,545,88"/>
-<area shape="rect" id="node9" href="$classUrl.html#a8619c64fc36c464a23a49ca7e3143e36" title="Url::has_query" alt="" coords="420,112,535,141"/>
-</map>

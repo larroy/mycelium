@@ -1,5 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node3" href="$classbig__hash_1_1big__hash__bucket.html#ab6756db632c4a2c42515999c6b20ccdb" title="Create bucket in root_dir with the provided key." alt="" coords="280,5,589,35"/>
-<area shape="rect" id="node5" href="$classbig__hash_1_1big__hash__bucket.html#aaeb1a51702833d86a1e70eefee326994" title="delete bucket" alt="" coords="316,59,553,88"/>
-<area shape="rect" id="node7" href="$classbig__hash_1_1big__hash__bucket.html#a7f61c6152e302cef9c41f9c79a549f59" title="write value (&quot;data&quot;) of this bucket to disk" alt="" coords="324,112,545,141"/>
-</map>
