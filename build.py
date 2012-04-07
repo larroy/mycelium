@@ -62,13 +62,6 @@ def main():
     os.chdir(old_dir)
 
 
-    STAGE = 'Building libstemmer...'
-    print STAGE
-    os.chdir('3rd_party/libstemmer_c/')
-    xsystem(['make', '-j{0}'.format(NPROCS)])
-    os.chdir(old_dir)
-
-
     STAGE = 'Building mongodb...'
     print STAGE
     os.chdir('3rd_party/mongodb/')
