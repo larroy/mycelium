@@ -1174,7 +1174,7 @@ void GlobalInfo::check_run_count ()
         CURL *easy;
         CURLcode res;
 
-        LOG4CXX_DEBUG(logger, fs("REMAINING: " << still_running));
+        //LOG4CXX_DEBUG(logger, fs("REMAINING: " << still_running));
         /*
            I am still uncertain whether it is safe to remove an easy handle
            from inside the curl_multi_info_read loop, so here I will search
