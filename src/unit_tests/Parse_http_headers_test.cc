@@ -1,7 +1,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
-#include "HTML_lexer.hh"
+#include "utils.hh"
 
 /**
  * @addtogroup unit_tests
@@ -26,8 +26,9 @@ Connection: keep-alive)EOS";
 
     content_type::content_type_t ctype;
     string charset;
+    map<string,string> headermap;
 
-    parse_headers(headers_in, ctype, charset);
+    utils::parse_http_headers(headers_in, ctype, charset, headermap);
     BOOST_CHECK_EQUAL(ctype, content_type::TEXT_HTML);
     BOOST_CHECK_EQUAL(charset, "utf-8");
 }

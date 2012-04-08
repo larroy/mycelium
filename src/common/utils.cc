@@ -19,6 +19,10 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+
+#include <boost/tokenizer.hpp>
+#include <boost/regex.hpp>
+
 #define LISTENQ 1024
 
 //#include "gzstream.hh"
@@ -605,6 +609,126 @@ std::string fmt_kbytes_s(double kBs) {
 
 }
 
+#define LWS "(?:\\r\\n)?[ \\t]+"
+#define token "[^[:cntrl:]()<>@,;\\\\:\"/\\[\\]?={}\\t]"
+#define separator "()<>@,;\\\\:\"/\\[\\]?={}\\t"
+//const boost::regex content_type_re("([^/;]+/[^/;]+)",boost::regex_constants::perl);
+
+static const boost::regex HEADER_RE("([^"separator"]+):(.+)",boost::regex_constants::perl);
+static const boost::regex CHARSET_RE("charset=("token"+)",boost::regex_constants::perl);
+#undef LWS
+#undef token
+#undef separator
+
+
+void parse_http_headers(
+    const std::string& headers,
+    content_type::content_type_t& content_type,
+    std::string& charset_http_head,
+    std::map<std::string, std::string>& headermap
+)
+{
+#ifdef USE_BOOST_TOKENIZER
+#error "old code"
+    using namespace boost;
+    smatch header_m;
+    typedef tokenizer<char_separator<char> > tokenizer;
+    char_separator<char> header_sep("\n\r");
+    tokenizer tokens(headers,header_sep);
+    for (tokenizer::iterator i=tokens.begin(); i != tokens.end(); ++i) {
+        if( *i == "\n" )
+            continue;
+        if( regex_match(*i, header_m, HEADER_RE) ) {
+            if( header_m[1].matched && header_m[2].matched) {
+                string name = header_m[1].str();
+                string value = header_m[2].str();
+                static const regex content_type_re("^Content-Type$", regex::perl|regex::icase);
+                if( regex_match(name, content_type_re) ) {
+                    if( value.find("text/html") != string::npos ) {
+                        content_type = content_type::TEXT_HTML;
+                    } else if (value.find("application/xhtml+xml")) {
+                        content_type = content_type::XHTML;
+                    } else if (value.find("text/plain") != string::npos) {
+                        content_type = content_type::TEXT_PLAIN;
+                    } else if (value.find("application/pdf") != string::npos) {
+                        content_type = content_type::APPLICATION_PDF;
+                    } else if (value.find("application/rss+xml") != string::npos) {
+                        content_type = content_type::RSS_XML;
+                    } else if (value.find("application/atom+xml") != string::npos) {
+                        content_type = content_type::ATOM_XML;
+                    } else {
+                        content_type = content_type::UNRECOGNIZED;
+                    }
+                    smatch charset_m;
+                    if(regex_search(value, charset_m, CHARSET_RE)) {
+                        charset_http_head = charset_m[1].str();
+                    }
+                }
+                headermap[name] = value;
+            } else {
+                //        cerr << "header captures: " << *i << " don't match" << endl;
+            }
+        } else {
+            //cerr << "header: |" << *i << "| doesn't match" << endl;
+        }
+    }
+
+
+#else
+    using namespace boost;
+    smatch header_m;
+
+    size_t tortoise=0;
+    size_t hare=0;
+    while((hare = headers.find_first_of("\n\r", tortoise)) != string::npos) {
+        if( hare > tortoise+1 ) {
+            string header = headers.substr(tortoise, hare - tortoise);
+            if(regex_match(header, header_m, HEADER_RE) ) {
+                if( header_m[1].matched && header_m[2].matched) {
+                    string name = header_m[1].str();
+                    string value = header_m[2].str();
+                    static const regex content_type_re("^Content-Type$", regex::perl|regex::icase);
+                    if( regex_match(name, content_type_re) ) {
+
+                        if( value.find("text/html") != string::npos ) {
+                            content_type = content_type::TEXT_HTML;
+
+                        } else if ( value.find("text/plain") != string::npos ) {
+                            content_type = content_type::TEXT_PLAIN;
+
+                        } else if (value.find("application/xhtml+xml")) {
+                            content_type = content_type::XHTML;
+
+                        } else if ( value.find("application/pdf") != string::npos ) {
+                            content_type = content_type::APPLICATION_PDF;
+
+                        } else if (value.find("application/rss+xml") != string::npos) {
+                            content_type = content_type::RSS_XML;
+
+                        } else if (value.find("application/atom+xml") != string::npos) {
+                            content_type = content_type::ATOM_XML;
+
+                        } else {
+                            content_type = content_type::UNRECOGNIZED;
+                            //    DLOG(cout << "TYPE: unrecognized: " << value << endl;)
+                        }
+                        smatch charset_m;
+                        if(regex_search(value, charset_m, CHARSET_RE)) {
+                            charset_http_head = charset_m[1].str();
+                        }
+                    }
+                    headermap[name] = value;
+                } else {
+                    // cerr << "header captures: " << *i << " don't match" << endl;
+                }
+            } else {
+                //cerr << "header: |" << *i << "| doesn't match" << endl;
+            }
+        }
+        tortoise = ++hare;
+    }
+#endif
+}
 
 void Setsockopt(int fd, int level, int optname, const void *optval, socklen_t optlen)
 {

@@ -38,8 +38,7 @@
 #include "Doc.hh"
 #include "Url_classifier.hh"
 #include "Robots.hh"
-#include "utils.hh"     // err_sys
-//#include "Doc_store.hh"
+#include "utils.hh"
 #include "timer.hh"
 
 
@@ -166,7 +165,16 @@ public:
     }
 
 
+    /**
+     * @pre only acts when the state of the handle is IDLE and
+     * sets it to work, thus changing the state to non IDLE
+     */
     void reschedule();
+
+    /** 
+     * Called when the handle has finished the work
+     * @post the state is set to IDLE before return
+     */
     void done(CURLcode result);
 
     size_t   id;
@@ -192,9 +200,9 @@ public:
     typedef enum state_t {
         IDLE,
         ROBOTS,
+        NEXT,
         HEAD,
-        CONTENT,
-        FINISHED
+        CONTENT
     } state_t;
     state_t state;
 
@@ -203,6 +211,8 @@ public:
 private:
     void get_content(const Url& url);
     void get_robots(const Url& url);
+    void head(const Url& url);
+    bool admisible(content_type::content_type_t&) const;
 };
 
 
@@ -764,86 +774,41 @@ void log_cb(int severity, const char *s)
 /// puts handle back to work, tries to dequeue next URL and set up a retrieval
 void EasyHandle::reschedule()
 {
-    if( state != IDLE )
-        return;
-
     if( global->classifier.empty_top() && global->classifier.empty(id) )
         return;
 
-    //curl_easy_cleanup(easy);
-    //easy = curl_easy_init();
     curl_easy_reset(easy);
 
     Url url = global->classifier.peek(id);
-    //LOG4CXX_DEBUG(logger, fs("peek("<<id<<"): " << url.get()));
-    //url.normalize_host();
     url.normalize();
-    if( ! robots_entry
-        || url.host() != robots_entry->host
-        || robots_entry->state == robots::EMPTY ) {
+    doc.reset(new Doc());
+    content_os.str("");
+    headers_os.str("");
+    switch (state) {
+        case IDLE: 
+        case ROBOTS:
+            LOG4CXX_INFO(logger, fs("handle id: " << id << " retrieving robots: " << url.host()));
 
-        LOG4CXX_INFO(logger, fs("handle id: " << id << " retrieving robots: " << url.host()));
+            /*******/
+            state = ROBOTS;
+            /*******/
+            doc->url.scheme("http");
+            doc->url.host(url.host());
+            doc->url.path("robots.txt");
+            get_robots(doc->url);
+            break;
 
-        /*******/
-        state = ROBOTS;
-        /*******/
+        case HEAD:
+            head(url);
+            break;
 
-        doc.reset(new Doc());
-        doc->url.scheme("http");
-        doc->url.host(url.host());
-        doc->url.path("robots.txt");
+        case CONTENT:
+            get_content(url);
+            break;
 
-        content_os.str("");
-        headers_os.str("");
-
-        get_robots(doc->url);
-
-
-
-    } else if( robots_entry->state == robots::NOT_AVAILABLE
-        || robots_entry->state == robots::EPARSE ) {
-
-        global->classifier.pop(id);
-
-        /*******/
-        state = CONTENT;
-        /*******/
-
-        doc.reset(new Doc());
-        content_os.str("");
-        headers_os.str("");
-
-        get_content(url);
-
-    } else if( robots_entry->state == robots::PRESENT
-            && url.host() == robots_entry->host ) {
-
-        // We already have robots.txt for this host so we keep dequeueing
-        while( ! global->classifier.empty(id) ) {
-            url = global->classifier.peek(id);
-            global->classifier.pop(id);
-
-            if( robots_entry->path_allowed(global->user_agent, url.path()) ) {
-                /*******/
-                state = CONTENT;
-                /*******/
-
-                doc.reset(new Doc());
-                content_os.str("");
-                headers_os.str("");
-
-                get_content(url);
-                break;
-
-            } else {
-                // disallowed by robots.txt
-                LOG4CXX_DEBUG(logger, fs("handle id: " << id << ", url: " << url.get() << " not allowed (robots.txt)"));
-            }
-        }
-    } else {
-        throw runtime_error("unknown state in reschedule");
+        default:
+            throw runtime_error("unknown state in reschedule");
     }
-
     // reset counters
     prev_dl_time = utils::timer::current();
     last_resched_time = utils::timer::current();
@@ -857,6 +822,8 @@ void EasyHandle::done(CURLcode result)
     char *eff_url = NULL;
     doc->curl_code = static_cast<int>(result);
     doc->curl_error.assign(curl_error);
+
+    // effective url, due to redirects
     curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &eff_url);
 
     long code;
@@ -914,7 +881,34 @@ void EasyHandle::done(CURLcode result)
                 robots_entry.reset(new robots::Robots_entry(doc->url.host(), robots::NOT_AVAILABLE));
             }
             doc->content.clear();
+            /*******/
+            state = EasyHandle::NEXT;
+            /*******/
             break;
+
+        case HEAD:
+            {
+                doc->url = eff_url;
+                doc->url.normalize();
+                doc->headers = headers_os.str();
+
+                content_type::content_type_t ctype;
+                string charset;
+                map<string, string> headermap;
+                utils::parse_http_headers(doc->headers, ctype, charset, headermap); 
+                if (admisible(ctype)) {
+                    /*******/
+                    state = EasyHandle::CONTENT;
+                    /*******/
+                } else {
+                    /*******/
+                    global->classifier.pop(id);
+                    state = EasyHandle::NEXT;
+                    /*******/
+                }
+            }
+            break;
+
 
         case CONTENT:
             // Content retrieval finished, we save the document
@@ -924,19 +918,81 @@ void EasyHandle::done(CURLcode result)
             doc->content = content_os.str();
             doc->save(global->mongodb_conn, global->mongodb_namespace);
             ++global->m_ndocs_saved;
+
+            /*******/
+            global->classifier.pop(id);
+            state = EasyHandle::NEXT;
+            /*******/
             break;
 
-        case HEAD:
-        case FINISHED:
+        case NEXT:
         default:
             LOG4CXX_DEBUG(logger, "Unsupported state in EasyHandle::done");
             break;
     }
-    state = EasyHandle::IDLE;
+    if (state == NEXT) {
+        /*******/
+        state = EasyHandle::IDLE;
+        /*******/
+        while( ! global->classifier.empty(id) ) {
+            /*******/
+            state = EasyHandle::IDLE;
+            /*******/
+            Url url = global->classifier.peek(id);
+            if (robots_entry->tried(url.host())
+                || (
+                       robots_entry->state == robots::PRESENT
+                    && url.host() == robots_entry->host
+                    && robots_entry->path_allowed(global->user_agent, url.path())
+                )) {
+
+                /*******/
+                state = EasyHandle::HEAD;
+                /*******/
+                break;
+            } else {
+                LOG4CXX_DEBUG(logger, fs("handle id: " << id << ", url: " << url.get() << " not allowed (robots.txt)"));
+                /*******/
+                global->classifier.pop(id);
+                /*******/
+            }
+        }
+    }
+
     doc->url.clear();
     reschedule();
 }
 
+
+
+void EasyHandle::get_robots(const Url& url)
+{
+    my_curl_easy_setopt(easy, CURLOPT_URL, url.get().c_str());
+
+    my_curl_easy_setopt(easy, CURLOPT_HEADERFUNCTION, NULL);
+    my_curl_easy_setopt(easy, CURLOPT_HEADERDATA, NULL);
+
+    //my_curl_easy_setopt(easy, CURLOPT_HEADERFUNCTION, url_string.c_str());
+    my_curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, header_write_cb);
+    my_curl_easy_setopt(easy, CURLOPT_WRITEDATA, this);
+    my_curl_easy_setopt(easy, CURLOPT_VERBOSE, 0L);
+    //my_curl_easy_setopt(easy, CURLOPT_VERBOSE, 1L);
+    memset(curl_error,0,CURL_ERROR_SIZE);
+    my_curl_easy_setopt(easy, CURLOPT_ERRORBUFFER, curl_error);
+    my_curl_easy_setopt(easy, CURLOPT_PRIVATE, this);
+    my_curl_easy_setopt(easy, CURLOPT_NOPROGRESS, 0L);
+    my_curl_easy_setopt(easy, CURLOPT_PROGRESSFUNCTION, progress_cb);
+    my_curl_easy_setopt(easy, CURLOPT_PROGRESSDATA, this);
+    my_curl_easy_setopt(easy, CURLOPT_HTTPHEADER, 0);
+    // timeouts
+    my_curl_easy_setopt(easy, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
+    my_curl_easy_setopt(easy, CURLOPT_LOW_SPEED_TIME, LOW_SPEED_TIME);
+    my_curl_easy_setopt(easy, CURLOPT_LOW_SPEED_LIMIT, LOW_SPEED_LIMIT);
+
+
+    CURLMcode rc = curl_multi_add_handle(global->multi, easy);
+    mcode_or_die("reschedule: curl_multi_add_handle", rc);
+}
 
 void EasyHandle::get_content(const Url& url)
 {
@@ -998,33 +1054,53 @@ void EasyHandle::get_content(const Url& url)
 }
 
 
-void EasyHandle::get_robots(const Url& url)
+
+void EasyHandle::head(const Url& url)
 {
-    my_curl_easy_setopt(easy, CURLOPT_URL, url.get().c_str());
+    LOG4CXX_INFO(logger, fs("handle id: " << id << " HEAD: " << url.get()));
+    //bool preexisting = doc->load_url(global->mongodb_conn, global->mongodb_namespace, url);
 
-    my_curl_easy_setopt(easy, CURLOPT_HEADERFUNCTION, NULL);
-    my_curl_easy_setopt(easy, CURLOPT_HEADERDATA, NULL);
+    string url_string = doc->url.get();
 
-    //my_curl_easy_setopt(easy, CURLOPT_HEADERFUNCTION, url_string.c_str());
-    my_curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, header_write_cb);
-    my_curl_easy_setopt(easy, CURLOPT_WRITEDATA, this);
-    my_curl_easy_setopt(easy, CURLOPT_VERBOSE, 0L);
+    my_curl_easy_setopt(easy, CURLOPT_URL, url_string.c_str());
+
+    // header
+    my_curl_easy_setopt(easy, CURLOPT_HEADERFUNCTION, header_write_cb);
+    my_curl_easy_setopt(easy, CURLOPT_HEADERDATA, this);
+
+
+    my_curl_easy_setopt(easy, CURLOPT_NOBODY, 1L);
+    
+    // content
+    //my_curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, content_write_cb);
+    //my_curl_easy_setopt(easy, CURLOPT_WRITEDATA, this);
+
     //my_curl_easy_setopt(easy, CURLOPT_VERBOSE, 1L);
+    my_curl_easy_setopt(easy, CURLOPT_VERBOSE, 0L);
     memset(curl_error,0,CURL_ERROR_SIZE);
     my_curl_easy_setopt(easy, CURLOPT_ERRORBUFFER, curl_error);
     my_curl_easy_setopt(easy, CURLOPT_PRIVATE, this);
     my_curl_easy_setopt(easy, CURLOPT_NOPROGRESS, 0L);
     my_curl_easy_setopt(easy, CURLOPT_PROGRESSFUNCTION, progress_cb);
     my_curl_easy_setopt(easy, CURLOPT_PROGRESSDATA, this);
+    my_curl_easy_setopt(easy, CURLOPT_FILETIME, 1L);
     my_curl_easy_setopt(easy, CURLOPT_HTTPHEADER, 0);
     // timeouts
     my_curl_easy_setopt(easy, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
     my_curl_easy_setopt(easy, CURLOPT_LOW_SPEED_TIME, LOW_SPEED_TIME);
     my_curl_easy_setopt(easy, CURLOPT_LOW_SPEED_LIMIT, LOW_SPEED_LIMIT);
 
+    my_curl_easy_setopt(easy, CURLOPT_FOLLOWLOCATION, 1);
+    my_curl_easy_setopt(easy, CURLOPT_MAXREDIRS, MAXREDIRS);
+    my_curl_easy_setopt(easy, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
 
     CURLMcode rc = curl_multi_add_handle(global->multi, easy);
-    mcode_or_die("reschedule: curl_multi_add_handle", rc);
+    mcode_or_die("get_content: curl_multi_add_handle", rc);
+}
+
+bool EasyHandle::admisible(content_type::content_type_t& ctype) const
+{
+    return ctype > content_type::UNRECOGNIZED && ctype < content_type::EMPTY;
 }
 
 void GlobalInfo::listen()
@@ -1178,7 +1254,7 @@ void GlobalInfo::interactive_process(bool flush)
 
 void GlobalInfo::status()
 {
-    const char *statestr[] = { "IDLE", "ROBOTS", "HEAD", "CONTENT", "FINISHED" };
+    const char *statestr[] = {"IDLE", "ROBOTS", "HEAD", "CONTENT"};
     for(std::vector<EasyHandle*>::iterator i = EasyHandles.begin(); i != EasyHandles.end(); ++i) {
         utils::timer timediff = utils::timer::current() - (*i)->last_resched_time;
         if ((*i)->doc)

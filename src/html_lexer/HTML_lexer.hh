@@ -12,10 +12,8 @@
  *
  * @{
  */
+#pragma once
 
-
-#ifndef HTML_lexer_hh
-#define HTML_lexer_hh 1
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -35,7 +33,6 @@
 #include <FlexLexer.h>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/regex.hpp>
 
 #include <unicode/utypes.h>   /* Basic ICU data types */
 #include <unicode/ucnv.h>     /* C   Converter API    */
@@ -48,57 +45,7 @@
 #include "utils.hh"
 #include "Url.hh"
 
-namespace content_type {
-    typedef enum content_type_t {
-        UNSET=0,
 
-        // No Content-type header
-        NONE, 
-
-        // Content-type header that we aren't interested
-        UNRECOGNIZED,
-
-        // text/html
-        TEXT_HTML,
-
-        // application/xhtml+xml
-        XHTML,
-
-        // application/rss+xml
-        RSS_XML,
-
-        // application/atom+xml
-        ATOM_XML,
-
-        // text/xml
-        TEXT_XML,
-
-        // text/plain
-        TEXT_PLAIN,
-
-        // application/pdf
-        APPLICATION_PDF,
-
-        FILE_DIRECTORY,
-
-        // Empty file, used for local files 
-        EMPTY,
-
-        CONTENT_TYPE_MAX
-    } content_type_t;
-};    
-
-
-/**
- * @brief Parse HTTP headers
- * @param[in] headers
- * @param[out] content_type 
- * @param[out] charset_http_head charset of the document, if any
- */
-void parse_headers(
-    const std::string& headers,
-    content_type::content_type_t& content_type,
-    std::string& charset_http_head);
 
 struct link {
     std::string url;
@@ -340,9 +287,6 @@ public:
 ProcHTML html_lex(const std::string& html_in, const std::string& base_url);
 
 
-/// Regex to find charset, in meta or http headers
-extern const boost::regex charset_re;
-
 
 
 
@@ -360,9 +304,4 @@ inline HTML_lexer& HTML_lexer::reset(std::istream* i, std::ostream* txtout, cons
     return *this;    
 }
 
-
-
-
-#endif
 /** @} */
-

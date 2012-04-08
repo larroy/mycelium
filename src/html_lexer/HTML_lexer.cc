@@ -1,11 +1,13 @@
-#include <boost/tokenizer.hpp>
-#include <boost/algorithm/string.hpp>
 #include <memory>
 #include <stdexcept>
 #include <functional>
+#include <boost/tokenizer.hpp>
+#include <boost/algorithm/string.hpp>
+
 
 #include "Url.hh"
 #include "utils.hh"
+#include "content_type.hh"
 #include "HTML_lexer.hh"
 
 
@@ -26,10 +28,8 @@ const char* HTML_lexer::toknames[] = {
 #define token "[^[:cntrl:]()<>@,;\\\\:\"/\\[\\]?={}\\t]"
 #define separator "()<>@,;\\\\:\"/\\[\\]?={}\\t"
 //const boost::regex content_type_re("([^/;]+/[^/;]+)",boost::regex_constants::perl);
-
-static const boost::regex HEADER_RE("([^"separator"]+):(.+)",boost::regex_constants::perl);
-const boost::regex CHARSET_RE("charset=("token"+)",boost::regex_constants::perl);
 static const boost::regex META_REFRESH_RE("^\\d+; url=(.+)$",boost::regex_constants::perl | boost::regex_constants::icase);
+static const boost::regex CHARSET_RE("charset=("token"+)",boost::regex_constants::perl);
 #undef LWS
 #undef token
 #undef separator
@@ -205,19 +205,22 @@ std::ostream& operator<<(std::ostream& os, const struct HTML_lexer::Token& t)
 }
 
 
-void HTML_lexer::warn(const std::string& warning) {
+void HTML_lexer::warn(const std::string& warning)
+{
     if( warnings && warnings->good() ) {
         (*warnings) << warning;
     }
 }
 
-void HTML_lexer::warn(const char* warning) {
+void HTML_lexer::warn(const char* warning)
+{
     if( warnings && warnings->good() ) {
         (*warnings) << warning;
     }
 }
 
-void HTML_lexer::warn(const char* warning, const char* str, int len) {
+void HTML_lexer::warn(const char* warning, const char* str, int len)
+{
     if( warnings && warnings->good() ) {
         (*warnings) << warning << ": yytext: \"";
         (*warnings).write(str, len);
@@ -238,7 +241,8 @@ void HTML_lexer::warn(const char* warning, const char* str, int len) {
 }
 
 
-void HTML_lexer::text_add(const string& text) {
+void HTML_lexer::text_add(const string& text)
+{
     if( unlikely(flags.test(FLAG_GET_TITLE)) && analysis )
         analysis->title += text;
 
@@ -248,7 +252,8 @@ void HTML_lexer::text_add(const string& text) {
     did_word_break = false;
 }
 
-void HTML_lexer::text_word_break() {
+void HTML_lexer::text_word_break()
+{
     //curdoc->words.resize(curdoc->words.size()+1);
     //curdoc->words.insert(curdoc->words.end(),string());
     if( txtout && txtout->good() && ! did_word_break ) {
@@ -258,7 +263,8 @@ void HTML_lexer::text_word_break() {
 
 }
 
-void HTML_lexer::link_add(const string& link) {
+void HTML_lexer::link_add(const string& link)
+{
     if( base_url ) {
         try {
             Url url(link);
@@ -290,7 +296,8 @@ void HTML_lexer::link_add(const string& link) {
     //curlink.words.resize(1);
 }
 
-void HTML_lexer::link_text_add(const string& text) {
+void HTML_lexer::link_text_add(const string& text)
+{
     // add it to normal text
     text_add(text);
     curlink.txt.append(text);
@@ -299,7 +306,8 @@ void HTML_lexer::link_text_add(const string& text) {
 //    curlink.words.back().append(text);
 }
 
-void HTML_lexer::link_text_word_break() {
+void HTML_lexer::link_text_word_break()
+{
     //++curdoc->tf[curlink.words.back()];
 //    text_word_break();
 
@@ -308,7 +316,8 @@ void HTML_lexer::link_text_word_break() {
     curlink.txt.append(" ");
 }
 
-void HTML_lexer::submit_link() {
+void HTML_lexer::submit_link()
+{
     //curdoc->links.push_back(curlink);
     // FIXME
     if( curlink && lnkout && lnkout->good() )
@@ -718,7 +727,8 @@ void HTML_lexer::tag_map(tokens_t& tok, std::map<std::string, std::string>& m)
     }
 }
 
-void HTML_lexer::process() {
+void HTML_lexer::process()
+{
 
     if (tokens.empty())
         return;
@@ -784,116 +794,10 @@ void HTML_lexer::process() {
 } */
 
 
-void HTML_lexer::finalize() {
-}
-
-void parse_headers(
-    const std::string& headers,
-    content_type::content_type_t& content_type,
-    std::string& charset_http_head
-    )
+void HTML_lexer::finalize()
 {
-#ifdef USE_BOOST_TOKENIZER
-#error "old code"
-    using namespace boost;
-    smatch header_m;
-    typedef tokenizer<char_separator<char> > tokenizer;
-    char_separator<char> header_sep("\n\r");
-    tokenizer tokens(headers,header_sep);
-    for (tokenizer::iterator i=tokens.begin(); i != tokens.end(); ++i) {
-        if( *i == "\n" )
-            continue;
-        if( regex_match(*i, header_m, HEADER_RE) ) {
-            if( header_m[1].matched && header_m[2].matched) {
-                string name = header_m[1].str();
-                string value = header_m[2].str();
-                static const regex content_type_re("^Content-Type$", regex::perl|regex::icase);
-                if( regex_match(name, content_type_re) ) {
-                    if( value.find("text/html") != string::npos ) {
-                        content_type = content_type::TEXT_HTML;
-                    } else if (value.find("application/xhtml+xml")) {
-                        content_type = content_type::XHTML;
-                    } else if (value.find("text/plain") != string::npos) {
-                        content_type = content_type::TEXT_PLAIN;
-                    } else if (value.find("application/pdf") != string::npos) {
-                        content_type = content_type::APPLICATION_PDF;
-                    } else if (value.find("application/rss+xml") != string::npos) {
-                        content_type = content_type::RSS_XML;
-                    } else if (value.find("application/atom+xml") != string::npos) {
-                        content_type = content_type::ATOM_XML;
-                    } else {
-                        content_type = content_type::UNRECOGNIZED;
-                    }
-                    smatch charset_m;
-                    if(regex_search(value, charset_m, CHARSET_RE)) {
-                        charset_http_head = charset_m[1].str();
-                    }
-                    return;
-                }
-            } else {
-                //        cerr << "header captures: " << *i << " don't match" << endl;
-            }
-        } else {
-            //cerr << "header: |" << *i << "| doesn't match" << endl;
-        }
-    }
-
-
-#else
-    using namespace boost;
-    smatch header_m;
-
-    size_t tortoise=0;
-    size_t hare=0;
-    while((hare = headers.find_first_of("\n\r", tortoise)) != string::npos) {
-        if( hare > tortoise+1 ) {
-            string header = headers.substr(tortoise, hare - tortoise);
-            if(regex_match(header, header_m, HEADER_RE) ) {
-                if( header_m[1].matched && header_m[2].matched) {
-                    string name = header_m[1].str();
-                    string value = header_m[2].str();
-                    static const regex content_type_re("^Content-Type$", regex::perl|regex::icase);
-                    if( regex_match(name, content_type_re) ) {
-
-                        if( value.find("text/html") != string::npos ) {
-                            content_type = content_type::TEXT_HTML;
-
-                        } else if ( value.find("text/plain") != string::npos ) {
-                            content_type = content_type::TEXT_PLAIN;
-
-                        } else if (value.find("application/xhtml+xml")) {
-                            content_type = content_type::XHTML;
-
-                        } else if ( value.find("application/pdf") != string::npos ) {
-                            content_type = content_type::APPLICATION_PDF;
-
-                        } else if (value.find("application/rss+xml") != string::npos) {
-                            content_type = content_type::RSS_XML;
-
-                        } else if (value.find("application/atom+xml") != string::npos) {
-                            content_type = content_type::ATOM_XML;
-
-                        } else {
-                            content_type = content_type::UNRECOGNIZED;
-                            //    DLOG(cout << "TYPE: unrecognized: " << value << endl;)
-                        }
-                        smatch charset_m;
-                        if(regex_search(value, charset_m, CHARSET_RE)) {
-                            charset_http_head = charset_m[1].str();
-                        }
-                        return;
-                    }
-                } else {
-                    // cerr << "header captures: " << *i << " don't match" << endl;
-                }
-            } else {
-                //cerr << "header: |" << *i << "| doesn't match" << endl;
-            }
-        }
-        tortoise = ++hare;
-    }
-#endif
 }
+
 
 std::ostream& operator<<(std::ostream& os, const struct link& l)
 {

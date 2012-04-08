@@ -195,6 +195,11 @@ namespace robots {
             host()
         {}
 
+        bool tried(const std::string& host) const
+        {
+            return host == this->host && (state == PRESENT || state == NOT_AVAILABLE || state == EPARSE);
+        }
+
         robots_state_t state;
         std::string host;
     };
