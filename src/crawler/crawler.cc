@@ -66,6 +66,7 @@ using namespace std;
 
 namespace {
 
+const char *statestr[] = {"IDLE", "ROBOTS", "NEXT", "HEAD", "CONTENT"};
 struct GlobalInfo;
 struct SockInfo;
 
@@ -171,7 +172,7 @@ public:
      */
     void reschedule();
 
-    /** 
+    /**
      * Called when the handle has finished the work
      * @post the state is set to IDLE before return
      */
@@ -785,7 +786,7 @@ void EasyHandle::reschedule()
     content_os.str("");
     headers_os.str("");
     switch (state) {
-        case IDLE: 
+        case IDLE:
         case ROBOTS:
             LOG4CXX_INFO(logger, fs("handle id: " << id << " retrieving robots: " << url.host()));
 
@@ -841,14 +842,10 @@ void EasyHandle::done(CURLcode result)
     gettimeofday(&t,0);
     doc->crawled = t.tv_sec;
 
-    if( result == CURLE_OK ) {
-        LOG4CXX_INFO (logger, fs("handle id: " << id << " DONE: "
-            << eff_url << " HTTP " << doc->http_code));
-    } else {
-        LOG4CXX_WARN(logger, fs("handle id: " << id << " DONE: "
-            << eff_url << " HTTP " << doc->http_code
-            << " curl_code: " << result << " (" << curl_error << ")"));
-    }
+    LOG4CXX_INFO(logger, fs("handle id: " << id << " " << statestr[state] << " DONE: "
+        << eff_url << " HTTP " << doc->http_code
+        << " curl_code: " << result << " (" << curl_error << ")"));
+
     switch(state) {
         case IDLE:
             throw runtime_error("done called on IDLE handle");
@@ -856,7 +853,7 @@ void EasyHandle::done(CURLcode result)
 
         case ROBOTS:
             // try to parse robots contents
-            if( doc->http_code == 200 && result == CURLE_OK && ! doc->content.empty() ) {
+            if(result == CURLE_OK && doc->http_code == 200 && ! doc->content.empty()) {
                 try {
                     istringstream robots_is(content_os.str());
                     robots_entry.reset(new robots::Robots_entry(doc->url.host(), &robots_is));
@@ -882,12 +879,13 @@ void EasyHandle::done(CURLcode result)
             }
             doc->content.clear();
             /*******/
+            global->classifier.pop(id);
             state = EasyHandle::NEXT;
             /*******/
             break;
 
         case HEAD:
-            {
+            if( result == CURLE_OK && doc->http_code == 200) {
                 doc->url = eff_url;
                 doc->url.normalize();
                 doc->headers = headers_os.str();
@@ -895,7 +893,7 @@ void EasyHandle::done(CURLcode result)
                 content_type::content_type_t ctype;
                 string charset;
                 map<string, string> headermap;
-                utils::parse_http_headers(doc->headers, ctype, charset, headermap); 
+                utils::parse_http_headers(doc->headers, ctype, charset, headermap);
                 if (admisible(ctype)) {
                     /*******/
                     state = EasyHandle::CONTENT;
@@ -906,23 +904,35 @@ void EasyHandle::done(CURLcode result)
                     state = EasyHandle::NEXT;
                     /*******/
                 }
+            } else {
+                /*******/
+                global->classifier.pop(id);
+                state = EasyHandle::NEXT;
+                /*******/
             }
             break;
 
 
         case CONTENT:
             // Content retrieval finished, we save the document
-            doc->url = eff_url;
-            doc->url.normalize();
-            doc->headers = headers_os.str();
-            doc->content = content_os.str();
-            doc->save(global->mongodb_conn, global->mongodb_namespace);
-            ++global->m_ndocs_saved;
+            if( result == CURLE_OK && doc->http_code == 200) {
+                doc->url = eff_url;
+                doc->url.normalize();
+                doc->headers = headers_os.str();
+                doc->content = content_os.str();
+                doc->save(global->mongodb_conn, global->mongodb_namespace);
+                ++global->m_ndocs_saved;
 
-            /*******/
-            global->classifier.pop(id);
-            state = EasyHandle::NEXT;
-            /*******/
+                /*******/
+                global->classifier.pop(id);
+                state = EasyHandle::NEXT;
+                /*******/
+            } else {
+                /*******/
+                global->classifier.pop(id);
+                state = EasyHandle::NEXT;
+                /*******/
+            }
             break;
 
         case NEXT:
@@ -944,7 +954,8 @@ void EasyHandle::done(CURLcode result)
                        robots_entry->state == robots::PRESENT
                     && url.host() == robots_entry->host
                     && robots_entry->path_allowed(global->user_agent, url.path())
-                )) {
+                )
+            ) {
 
                 /*******/
                 state = EasyHandle::HEAD;
@@ -967,7 +978,9 @@ void EasyHandle::done(CURLcode result)
 
 void EasyHandle::get_robots(const Url& url)
 {
-    my_curl_easy_setopt(easy, CURLOPT_URL, url.get().c_str());
+
+    string url_string = url.get();
+    my_curl_easy_setopt(easy, CURLOPT_URL, url_string.c_str());
 
     my_curl_easy_setopt(easy, CURLOPT_HEADERFUNCTION, NULL);
     my_curl_easy_setopt(easy, CURLOPT_HEADERDATA, NULL);
@@ -989,6 +1002,10 @@ void EasyHandle::get_robots(const Url& url)
     my_curl_easy_setopt(easy, CURLOPT_LOW_SPEED_TIME, LOW_SPEED_TIME);
     my_curl_easy_setopt(easy, CURLOPT_LOW_SPEED_LIMIT, LOW_SPEED_LIMIT);
 
+    my_curl_easy_setopt(easy, CURLOPT_FOLLOWLOCATION, 1);
+    my_curl_easy_setopt(easy, CURLOPT_MAXREDIRS, MAXREDIRS);
+    my_curl_easy_setopt(easy, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+
 
     CURLMcode rc = curl_multi_add_handle(global->multi, easy);
     mcode_or_die("reschedule: curl_multi_add_handle", rc);
@@ -996,10 +1013,10 @@ void EasyHandle::get_robots(const Url& url)
 
 void EasyHandle::get_content(const Url& url)
 {
-    LOG4CXX_INFO(logger, fs("handle id: " << id << " retrieving content: " << url.host()));
+    LOG4CXX_INFO(logger, fs("handle id: " << id << " CONTENT: " << url.get()));
     bool preexisting = doc->load_url(global->mongodb_conn, global->mongodb_namespace, url);
 
-    string url_string = doc->url.get();
+    string url_string = url.get();
 
     my_curl_easy_setopt(easy, CURLOPT_URL, url_string.c_str());
 
@@ -1060,7 +1077,7 @@ void EasyHandle::head(const Url& url)
     LOG4CXX_INFO(logger, fs("handle id: " << id << " HEAD: " << url.get()));
     //bool preexisting = doc->load_url(global->mongodb_conn, global->mongodb_namespace, url);
 
-    string url_string = doc->url.get();
+    string url_string = url.get();
 
     my_curl_easy_setopt(easy, CURLOPT_URL, url_string.c_str());
 
@@ -1070,7 +1087,7 @@ void EasyHandle::head(const Url& url)
 
 
     my_curl_easy_setopt(easy, CURLOPT_NOBODY, 1L);
-    
+
     // content
     //my_curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, content_write_cb);
     //my_curl_easy_setopt(easy, CURLOPT_WRITEDATA, this);
@@ -1254,7 +1271,6 @@ void GlobalInfo::interactive_process(bool flush)
 
 void GlobalInfo::status()
 {
-    const char *statestr[] = {"IDLE", "ROBOTS", "HEAD", "CONTENT"};
     for(std::vector<EasyHandle*>::iterator i = EasyHandles.begin(); i != EasyHandles.end(); ++i) {
         utils::timer timediff = utils::timer::current() - (*i)->last_resched_time;
         if ((*i)->doc)
