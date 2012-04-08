@@ -210,7 +210,7 @@ public:
     curl_slist *headers;
 
 private:
-    void get_content(const Url& url);
+    void get_content(const Url& url, bool preexisting = false);
     void get_robots(const Url& url);
     void head(const Url& url);
     bool admisible(content_type::content_type_t&) const;
@@ -782,9 +782,19 @@ void EasyHandle::reschedule()
 
     Url url = global->classifier.peek(id);
     url.normalize();
+
     doc.reset(new Doc());
+    bool preexisting = doc->load_url(global->mongodb_conn, global->mongodb_namespace, url);
+    LOG4CXX_DEBUG(logger, fs("handle id: " << id << " " << url.get() << " preexisting: " << preexisting));
+    if (preexisting) {
+        /*******/
+        state = CONTENT;
+        /*******/
+    }
+
     content_os.str("");
     headers_os.str("");
+
     switch (state) {
         case IDLE:
         case ROBOTS:
@@ -804,7 +814,7 @@ void EasyHandle::reschedule()
             break;
 
         case CONTENT:
-            get_content(url);
+            get_content(url, preexisting);
             break;
 
         default:
@@ -879,8 +889,7 @@ void EasyHandle::done(CURLcode result)
             }
             doc->content.clear();
             /*******/
-            global->classifier.pop(id);
-            state = EasyHandle::NEXT;
+            state = NEXT;
             /*******/
             break;
 
@@ -896,18 +905,18 @@ void EasyHandle::done(CURLcode result)
                 utils::parse_http_headers(doc->headers, ctype, charset, headermap);
                 if (admisible(ctype)) {
                     /*******/
-                    state = EasyHandle::CONTENT;
+                    state = CONTENT;
                     /*******/
                 } else {
                     /*******/
                     global->classifier.pop(id);
-                    state = EasyHandle::NEXT;
+                    state = NEXT;
                     /*******/
                 }
             } else {
                 /*******/
                 global->classifier.pop(id);
-                state = EasyHandle::NEXT;
+                state = NEXT;
                 /*******/
             }
             break;
@@ -949,7 +958,18 @@ void EasyHandle::done(CURLcode result)
             state = EasyHandle::IDLE;
             /*******/
             Url url = global->classifier.peek(id);
-            if (robots_entry->tried(url.host())
+            url.normalize();
+
+            bool preexisting = doc->load_url(global->mongodb_conn, global->mongodb_namespace, url);
+
+            /// Directly get CONTENT as if the document didn't change we get 304 without contents 
+            if (preexisting) {
+                /*******/
+                state = EasyHandle::CONTENT;
+                /*******/
+                break;
+
+            } else if (robots_entry->tried_but_failed(url.host())
                 || (
                        robots_entry->state == robots::PRESENT
                     && url.host() == robots_entry->host
@@ -961,8 +981,10 @@ void EasyHandle::done(CURLcode result)
                 state = EasyHandle::HEAD;
                 /*******/
                 break;
+
             } else {
-                LOG4CXX_DEBUG(logger, fs("handle id: " << id << ", url: " << url.get() << " not allowed (robots.txt)"));
+
+                LOG4CXX_INFO(logger, fs("handle id: " << id << ", url: " << url.get() << " not allowed (robots.txt)"));
                 /*******/
                 global->classifier.pop(id);
                 /*******/
@@ -1011,10 +1033,9 @@ void EasyHandle::get_robots(const Url& url)
     mcode_or_die("reschedule: curl_multi_add_handle", rc);
 }
 
-void EasyHandle::get_content(const Url& url)
+void EasyHandle::get_content(const Url& url, bool preexisting)
 {
-    LOG4CXX_INFO(logger, fs("handle id: " << id << " CONTENT: " << url.get()));
-    bool preexisting = doc->load_url(global->mongodb_conn, global->mongodb_namespace, url);
+    LOG4CXX_INFO(logger, fs("handle id: " << id << " CONTENT: " << url.get() << (preexisting ? " preexisting" : "")));
 
     string url_string = url.get();
 
