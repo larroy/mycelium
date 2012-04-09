@@ -167,14 +167,16 @@ public:
 
 
     /**
-     * @pre only acts when the state of the handle is IDLE and
-     * sets it to work, thus changing the state to non IDLE
+     * Set up an HTTP transfer depending on the state.
+     * It will do a robots.txt, HEAD or GET depending on the state
+     * as set by @sa done
      */
     void reschedule();
 
     /**
-     * Called when the handle has finished the work
-     * @post the state is set to IDLE before return
+     * Called when the handle has finished the work as scheduled
+     * in @sa reschedule.
+     * Does the transition between states
      */
     void done(CURLcode result);
 
@@ -828,6 +830,9 @@ void EasyHandle::reschedule()
 }
 
 
+/**
+ * This is a hairy state machine.
+ */
 void EasyHandle::done(CURLcode result)
 {
     char *eff_url = NULL;
@@ -858,12 +863,14 @@ void EasyHandle::done(CURLcode result)
 
     switch(state) {
         case IDLE:
+            // 'done' on an IDLE handle is an error
             throw runtime_error("done called on IDLE handle");
             break;
 
         case ROBOTS:
-            // try to parse robots contents
-            if(result == CURLE_OK && doc->http_code == 200 && ! doc->content.empty()) {
+            // a robots.txt transfer finished, we try to parse robots.txt and
+            // program robots_entry
+            if(result == CURLE_OK && doc->http_code == 200 && !  doc->content.empty()) {
                 try {
                     istringstream robots_is(content_os.str());
                     robots_entry.reset(new robots::Robots_entry(doc->url.host(), &robots_is));
@@ -889,20 +896,25 @@ void EasyHandle::done(CURLcode result)
             }
             doc->content.clear();
             /*******/
+            // we don't pop as the target url is still on the queue
             state = NEXT;
             /*******/
             break;
 
         case HEAD:
+            // an HTTP HEAD request finished
             if( result == CURLE_OK && doc->http_code == 200) {
                 doc->url = eff_url;
                 doc->url.normalize();
                 doc->headers = headers_os.str();
 
+                // parse HTTP headers
                 content_type::content_type_t ctype;
                 string charset;
                 map<string, string> headermap;
                 utils::parse_http_headers(doc->headers, ctype, charset, headermap);
+
+                // Check if the Content-type is our target
                 if (admisible(ctype)) {
                     /*******/
                     state = CONTENT;
@@ -923,10 +935,10 @@ void EasyHandle::done(CURLcode result)
 
 
         case CONTENT:
-            // Content retrieval finished, we save the document
+            // HTTP GET request finished
+            doc->url = eff_url;
+            doc->url.normalize();
             if( result == CURLE_OK && doc->http_code == 200) {
-                doc->url = eff_url;
-                doc->url.normalize();
                 doc->headers = headers_os.str();
                 doc->content = content_os.str();
                 doc->save(global->mongodb_conn, global->mongodb_namespace);
@@ -934,12 +946,12 @@ void EasyHandle::done(CURLcode result)
 
                 /*******/
                 global->classifier.pop(id);
-                state = EasyHandle::NEXT;
+                state = NEXT;
                 /*******/
             } else {
                 /*******/
                 global->classifier.pop(id);
-                state = EasyHandle::NEXT;
+                state = NEXT;
                 /*******/
             }
             break;
@@ -949,6 +961,8 @@ void EasyHandle::done(CURLcode result)
             LOG4CXX_DEBUG(logger, "Unsupported state in EasyHandle::done");
             break;
     }
+
+
     if (state == NEXT) {
         /*******/
         state = EasyHandle::IDLE;
@@ -962,26 +976,37 @@ void EasyHandle::done(CURLcode result)
 
             bool preexisting = doc->load_url(global->mongodb_conn, global->mongodb_namespace, url);
 
-            /// Directly get CONTENT as if the document didn't change we get 304 without contents 
+            /// Directly get CONTENT as if the document didn't change we get 304 without contents
             if (preexisting) {
                 /*******/
-                state = EasyHandle::CONTENT;
+                state = CONTENT;
                 /*******/
                 break;
 
-            } else if (robots_entry->tried_but_failed(url.host())
-                || (
-                       robots_entry->state == robots::PRESENT
-                    && url.host() == robots_entry->host
-                    && robots_entry->path_allowed(global->user_agent, url.path())
+            /// robots is missing
+            } else if (! robots_entry || url.host() != robots_entry->host) {
+                /*******/
+                state = ROBOTS;
+                /*******/
+                break;
+
+            /// url allowed by robots.txt or robots.txt not present, so allowed
+            } else if (robots_entry
+                && (robots_entry->tried_but_failed(url.host())
+                    || (
+                           robots_entry->state == robots::PRESENT
+                        && url.host() == robots_entry->host
+                        && robots_entry->path_allowed(global->user_agent, url.path())
+                    )
                 )
             ) {
 
                 /*******/
-                state = EasyHandle::HEAD;
+                state = HEAD;
                 /*******/
                 break;
 
+            /// url disallowed
             } else {
 
                 LOG4CXX_INFO(logger, fs("handle id: " << id << ", url: " << url.get() << " not allowed (robots.txt)"));
