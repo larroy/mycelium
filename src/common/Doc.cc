@@ -39,7 +39,8 @@ void Doc::save(mongo::DBClientConnection& c, const string& ns)
         b.append("crawled", (long long) crawled);
 
     if (! content.empty())
-        b.append("content", content);
+        //b.append("content", content);
+        b.appendBinData("content", static_cast<int>(content.size()), mongo::BinDataGeneral, content.c_str());
 
     if (! headers.empty())
         b.append("headers", headers);
@@ -99,8 +100,12 @@ bool Doc::load_url(mongo::DBClientConnection& c, const string& ns, const Url& _u
         if (doc.hasField("crawled"))
             crawled = doc["crawled"].numberLong();
 
-        if (doc.hasField("content"))
-            doc["content"].Val(content);
+        // We store binary as the data is in various encodings != UTF-8
+        if (doc.hasField("content")) {
+            int len = 0;
+            const char* buff = doc["content"].binData(len);
+            content.assign(buff, static_cast<size_t>(len));
+        }
 
         if (doc.hasField("headers"))
             doc["headers"].Val(headers);
