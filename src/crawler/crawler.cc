@@ -882,10 +882,8 @@ void EasyHandle::done(CURLcode result)
                     robots_entry.reset(new robots::Robots_entry(doc->url.host(), &robots_is));
                     int res = robots_entry->yylex();
                     if( res < 0 ) {
-
-                        //Url url = global->classifier.peek(id);
-                        //url.normalize();
-                        LOG4CXX_DEBUG(logger, fs("Failure parsing robots: " << doc->url.get() << " " << content_os.str()));
+                        // there's a lot of shit in the internet
+                        //LOG4CXX_DEBUG(logger, fs("Failure parsing robots: " << doc->url.get() << " " << content_os.str()));
                         robots_entry->clear();
                         ////////////
                         robots_entry->state = robots::EPARSE;
@@ -896,7 +894,7 @@ void EasyHandle::done(CURLcode result)
                         ////////////
                     }
                 } catch(...) {
-                    LOG4CXX_DEBUG(logger, fs("Exception while parsing robots: " << doc->url.get() << " " << content_os.str()));
+                    LOG4CXX_WARN(logger, fs("Exception while parsing robots: " << doc->url.get() << " " << content_os.str()));
                     ////////////
                     robots_entry->state = robots::EPARSE;
                     ////////////
