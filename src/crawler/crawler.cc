@@ -229,7 +229,8 @@ public:
             m_socklen(socklen),
             m_input_buff(),
             m_host(),
-            m_serv()
+            m_serv(),
+            m_num_urls()
         {
             assert(globalInfo);
             m_sa = static_cast<struct sockaddr*>(operator new(socklen));
@@ -259,6 +260,7 @@ public:
         std::string m_input_buff;
         std::string m_host;
         std::string m_serv;
+        size_t m_num_urls;
     };
 
 
@@ -475,7 +477,7 @@ void scheduler_cb(int fd, short kind, void *userp)
     g->dl_bytes_prev = g->dl_bytes;
     g->dl_prev_sample = utils::timer::current();
 
-    cout << "Downloaded: " << utils::fmt_bytes(g->dl_bytes) << " rate: " << utils::fmt_kbytes_s(kBs) << " docs: " << g->m_ndocs_saved << endl;
+    cout << "Downloaded: " << utils::fmt_bytes(g->dl_bytes) << " rate: " << utils::fmt_kbytes_s(kBs) << " done: " << g->m_ndocs_saved << " enqueued: " << g->classifier.size() << endl;
     if (quit_program)
         //throw runtime_error("quit_program");
         event_loopbreak();
@@ -675,7 +677,7 @@ void connection_read_cb(int fd, short event, void *arg)
         // flush remaining buffers
         //
         connection->process_input_buff(true);
-        LOG4CXX_INFO(logger, fs("connection from: " << connection->m_host << ":" << connection->m_serv << " closed"));
+        LOG4CXX_INFO(logger, fs("connection from: " << connection->m_host << ":" << connection->m_serv << " closed, read: " << connection->m_num_urls << " urls."));
         // Connection is destroyed here
         // erase gets by ref, nasty bug!
         int key = connection->m_fd;
@@ -799,7 +801,7 @@ void EasyHandle::reschedule()
     switch (state) {
         case IDLE:
         case ROBOTS:
-            LOG4CXX_INFO(logger, fs("handle id: " << id << " retrieving robots: " << url.host()));
+            LOG4CXX_DEBUG(logger, fs("handle id: " << id << " retrieving robots: " << url.host()));
 
             /*******/
             state = ROBOTS;
@@ -863,7 +865,7 @@ void EasyHandle::done(CURLcode result)
     gettimeofday(&t,0);
     doc->crawled = t.tv_sec;
 
-    LOG4CXX_INFO(logger, fs("handle id: " << id << " " << statestr[state] << " DONE: "
+    LOG4CXX_DEBUG(logger, fs("handle id: " << id << " " << statestr[state] << " DONE: "
         << eff_url << " HTTP " << doc->http_code
         << " curl_code: " << result << " (" << curl_error << ")"));
 
@@ -1080,7 +1082,7 @@ void EasyHandle::get_robots(const Url& url)
 
 void EasyHandle::get_content(const Url& url, bool preexisting)
 {
-    LOG4CXX_INFO(logger, fs("handle id: " << id << " CONTENT: " << url.get() << (preexisting ? " preexisting" : "")));
+    LOG4CXX_DEBUG(logger, fs("handle id: " << id << " CONTENT: " << url.get() << (preexisting ? " preexisting" : "")));
 
     string url_string = url.get();
 
@@ -1140,7 +1142,7 @@ void EasyHandle::get_content(const Url& url, bool preexisting)
 
 void EasyHandle::head(const Url& url)
 {
-    LOG4CXX_INFO(logger, fs("handle id: " << id << " HEAD: " << url.get()));
+    LOG4CXX_DEBUG(logger, fs("handle id: " << id << " HEAD: " << url.get()));
     //bool preexisting = doc->load_url(global->mongodb_conn, global->mongodb_namespace, url);
 
     string url_string = url.get();
@@ -1272,10 +1274,12 @@ void GlobalInfo::Connection::process_input_buff(bool flush)
                 //cout << "url: " << url << endl;
                 //LOG4CXX_INFO(logger, fs("read url: " << url.get()));
                 // TODO only accept http scheme
-                if( url.absolute() && url.scheme() == "http" )
+                if( url.absolute() && url.scheme() == "http" ) {
+                    ++m_num_urls;
                     m_globalInfo->classifier.push(url);
-                else
+                } else {
                     LOG4CXX_WARN(logger, fs("non-http scheme, ignoring " << url.to_string() << endl));
+                }
 
             } catch(UrlParseError& e) {
                 LOG4CXX_ERROR(logger, fs("url parse error: " << line << " : " << e.what() ));

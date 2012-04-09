@@ -86,10 +86,13 @@ public:
     bool empty_top();
 
     /// @return number of elements in queue n
-    size_t q_len(size_t n);
+    size_t q_len(size_t n) const;
 
     /// @return number of elements in top queue
-    size_t q_len_top();
+    size_t q_len_top() const;
+
+    /// @return total elements in all queues
+    size_t size() const;
 
 private:
 
@@ -119,7 +122,6 @@ private:
         mi::indexed_by<
             mi::ordered_non_unique<mi::tag<host>, mi::member<table_elmt_t,std::string,&table_elmt_t::host> >,
             mi::sequenced<mi::tag<seq> >,
-            //ordered_non_unique<tag<q>,     member<table_elmt_t,boost::shared_ptr<std::deque<U> >,&table_elmt_t::q> >,
             mi::ordered_unique<mi::tag<n>, mi::member<table_elmt_t,size_t,&table_elmt_t::n> >
         >
     > table_t;

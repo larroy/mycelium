@@ -22,7 +22,7 @@ bool Url_classifier::empty()
     return true;
 }
 
-size_t Url_classifier::q_len(size_t num)
+size_t Url_classifier::q_len(size_t num) const
 {
     tbl_n_idx_t::iterator i;
     if( (i = table.get<n>().find(num)) != table.get<n>().end() ) {
@@ -31,11 +31,20 @@ size_t Url_classifier::q_len(size_t num)
         throw runtime_error("no such num exist");
 }
 
-size_t Url_classifier::q_len_top()
+size_t Url_classifier::q_len_top() const
 {
     return top_q.size();
 }
 
+
+size_t Url_classifier::size() const
+{
+    size_t sum = 0;
+    for (auto i = table.get<seq>().begin(); i != table.get<seq>().end(); ++i)
+        sum += i->queue->size();
+    sum += top_q.size();
+    return sum;
+}
 
 bool Url_classifier::empty(size_t num)
 {
