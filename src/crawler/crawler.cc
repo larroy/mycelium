@@ -454,14 +454,13 @@ void timer_cb (int fd, short kind, void *userp)
     CURLMcode rc;
     (void) fd;
     (void) kind;
-    //cout << "timer cb!" << endl;
     do {
         rc = curl_multi_socket_action (g->multi,
             CURL_SOCKET_TIMEOUT, 0, &g->still_running);
     } while (rc == CURLM_CALL_MULTI_PERFORM);
     mcode_or_die("timer_cb: curl_multi_socket_action", rc);
 
-    LOG4CXX_DEBUG(logger, fs("timer_cb: still_running: " << g->still_running));
+    //LOG4CXX_DEBUG(logger, fs("timer_cb: still_running: " << g->still_running));
     g->check_run_count ();
 }
 
@@ -877,12 +876,16 @@ void EasyHandle::done(CURLcode result)
         case ROBOTS:
             // a robots.txt transfer finished, we try to parse robots.txt and
             // program robots_entry
-            if(result == CURLE_OK && doc->http_code == 200 && !  doc->content.empty()) {
+            if(result == CURLE_OK && doc->http_code == 200) {
                 try {
                     istringstream robots_is(content_os.str());
                     robots_entry.reset(new robots::Robots_entry(doc->url.host(), &robots_is));
                     int res = robots_entry->yylex();
                     if( res < 0 ) {
+
+                        //Url url = global->classifier.peek(id);
+                        //url.normalize();
+                        LOG4CXX_DEBUG(logger, fs("Failure parsing robots: " << doc->url.get() << " " << content_os.str()));
                         robots_entry->clear();
                         ////////////
                         robots_entry->state = robots::EPARSE;
@@ -893,6 +896,7 @@ void EasyHandle::done(CURLcode result)
                         ////////////
                     }
                 } catch(...) {
+                    LOG4CXX_DEBUG(logger, fs("Exception while parsing robots: " << doc->url.get() << " " << content_os.str()));
                     ////////////
                     robots_entry->state = robots::EPARSE;
                     ////////////
@@ -1051,7 +1055,7 @@ void EasyHandle::get_robots(const Url& url)
     my_curl_easy_setopt(easy, CURLOPT_HEADERDATA, NULL);
 
     //my_curl_easy_setopt(easy, CURLOPT_HEADERFUNCTION, url_string.c_str());
-    my_curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, header_write_cb);
+    my_curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, content_write_cb);
     my_curl_easy_setopt(easy, CURLOPT_WRITEDATA, this);
     my_curl_easy_setopt(easy, CURLOPT_VERBOSE, 0L);
     //my_curl_easy_setopt(easy, CURLOPT_VERBOSE, 1L);
