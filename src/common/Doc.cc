@@ -8,6 +8,7 @@
 
 #include "Doc.hh"
 #include "utils.hh"
+#include <cassert>
 
 using namespace std;
 
@@ -17,25 +18,59 @@ void Doc::save(mongo::DBClientConnection& c, const string& ns)
         throw std::runtime_error("url is empty");
     url.normalize();
 
-    mongo::BSONObj doc = BSON(
-        "url" << url.get() <<
-        "http_code" << http_code <<
-        "curl_code" << curl_code <<
-        "curl_error" << curl_error <<
-        "modified" << (long long) modified <<
-        "crawled" << (long long) crawled <<
-        "content" << content <<
-        "headers" << headers <<
-        "etag" << etag <<
-        "content_type" << (unsigned int) content_type <<
-        "charset" << charset <<
-        "flags" << static_cast<unsigned int>(flags.to_ulong()) <<
-        "title" << title << 
-        "rss2" << rss2 <<
-        "rss" << rss <<
-        "atom" << atom);
+    c.ensureIndex(ns, BSON("url" << 1));
 
-    c.insert(ns, doc);
+    bson::bob b;
+    //b.genOID();
+    b.append("url", url.get());
+    if (http_code != 0)
+        b.append("http_code", http_code);
+
+    if (curl_code != -1)
+        b.append("curl_code", curl_code);
+
+    if (! curl_error.empty())
+        b.append("curl_error", curl_error);
+
+    if (modified != -1)
+        b.append("modified", (long long) modified);
+
+    if (crawled != -1)
+        b.append("crawled", (long long) crawled);
+
+    if (! content.empty())
+        b.append("content", content);
+
+    if (! headers.empty())
+        b.append("headers", headers);
+
+    if (! etag.empty())
+        b.append("etag", etag);
+
+    if (content_type != content_type::UNSET)
+        b.append("content_type", (unsigned int) content_type);
+
+    if (! charset.empty())
+        b.append("charset", charset);
+
+    if (flags.any())
+        b.append("flags", static_cast<unsigned int>(flags.to_ulong()));
+
+    if (! title.empty())
+        b.append("title", title);
+
+    if (! rss2.empty())
+        b.append("rss2", rss2);
+
+    if (! rss.empty())
+        b.append("rss", rss);
+
+    if (! atom.empty())
+        b.append("atom", atom);
+
+    // upsert
+    c.update(ns, BSON("url" << url.get()), BSON("$set" << b.obj()), true);
+    //c.insert(ns, b.obj());
 }
 
 bool Doc::load_url(mongo::DBClientConnection& c, const string& ns, const Url& _url)
@@ -45,25 +80,60 @@ bool Doc::load_url(mongo::DBClientConnection& c, const string& ns, const Url& _u
     url.normalize();
 
     std::auto_ptr<mongo::DBClientCursor> cursor = c.query(ns, QUERY("url" << url.get()));
+    bool gotone = false;
     while (cursor->more()) {
         mongo::BSONObj doc = cursor->next();
 
-        doc["http_code"].Val(http_code);
-        doc["curl_code"].Val(curl_code);
-        doc["curl_error"].Val(curl_error);
-        modified = doc["modified"].numberLong();
-        crawled = doc["crawled"].numberLong();
-        doc["content"].Val(content);
-        doc["headers"].Val(headers);
-        doc["etag"].Val(etag);
-        doc["content_type"].Val(content_type);
-        doc["charset"].Val(charset);
-        flags = doc["flags"].Int();
-        doc["title"].Val(title);
-        doc["rss2"].Val(rss2);
-        doc["rss"].Val(rss);
-        doc["atom"].Val(atom);
-        return true;
+        if (doc.hasField("http_code"))
+            doc["http_code"].Val(http_code);
+
+        if (doc.hasField("curl_code"))
+            doc["curl_code"].Val(curl_code);
+
+        if (doc.hasField("curl_error"))
+            doc["curl_error"].Val(curl_error);
+
+        if (doc.hasField("modified"))
+            modified = doc["modified"].numberLong();
+
+        if (doc.hasField("crawled"))
+            crawled = doc["crawled"].numberLong();
+
+        if (doc.hasField("content"))
+            doc["content"].Val(content);
+
+        if (doc.hasField("headers"))
+            doc["headers"].Val(headers);
+
+        if (doc.hasField("etag"))
+            doc["etag"].Val(etag);
+
+        if (doc.hasField("content_type"))
+            doc["content_type"].Val(content_type);
+
+        if (doc.hasField("charset"))
+            doc["charset"].Val(charset);
+
+        if (doc.hasField("flags"))
+            flags = doc["flags"].Int();
+
+        if (doc.hasField("title"))
+            doc["title"].Val(title);
+
+        if (doc.hasField("rss2"))
+            doc["rss2"].Val(rss2);
+
+        if (doc.hasField("rss"))
+            doc["rss"].Val(rss);
+
+        if (doc.hasField("atom"))
+            doc["atom"].Val(atom);
+
+        if (gotone) {
+            clog << "Got a duplicated document by url :(" << endl;
+            assert(0);
+        }
+        gotone = true;
     }
     return false;
 }

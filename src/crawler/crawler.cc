@@ -215,7 +215,7 @@ private:
     void get_content(const Url& url, bool preexisting = false);
     void get_robots(const Url& url);
     void head(const Url& url);
-    bool admisible(content_type::content_type_t&) const;
+    bool acceptable(content_type::content_type_t&) const;
 };
 
 
@@ -831,27 +831,34 @@ void EasyHandle::reschedule()
 
 
 /**
- * This is a hairy state machine.
+ * This is a hairy state machine. Where documents are saved, and
+ * state changes.
+ *
+ * The basis is that first we want to retrieve robots.txt, then do
+ * a HEAD, then do GET, then IDLE
  */
 void EasyHandle::done(CURLcode result)
 {
     char *eff_url = NULL;
-    doc->curl_code = static_cast<int>(result);
-    doc->curl_error.assign(curl_error);
-
     // effective url, due to redirects
     curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &eff_url);
 
+    doc->url = eff_url;
+    doc->url.normalize();
+    doc->curl_code = static_cast<int>(result);
+    doc->curl_error.assign(curl_error);
+
+    // http code
     long code;
     curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, &code);
     doc->http_code = code;
 
     curl_easy_getinfo(easy, CURLINFO_FILETIME, &doc->modified);
+
     if (headers) {
         curl_slist_free_all(headers);
         headers = 0;
     }
-
 
     timeval t;
     gettimeofday(&t,0);
@@ -904,8 +911,6 @@ void EasyHandle::done(CURLcode result)
         case HEAD:
             // an HTTP HEAD request finished
             if( result == CURLE_OK && doc->http_code == 200) {
-                doc->url = eff_url;
-                doc->url.normalize();
                 doc->headers = headers_os.str();
 
                 // parse HTTP headers
@@ -913,19 +918,26 @@ void EasyHandle::done(CURLcode result)
                 string charset;
                 map<string, string> headermap;
                 utils::parse_http_headers(doc->headers, ctype, charset, headermap);
+                doc->content_type = ctype;
 
                 // Check if the Content-type is our target
-                if (admisible(ctype)) {
+                if (acceptable(ctype)) {
                     /*******/
                     state = CONTENT;
                     /*******/
                 } else {
+                    // TODO: this is hacky
+                    doc->http_code = 406; // Not Acceptable
+                    doc->save(global->mongodb_conn, global->mongodb_namespace);
+                    ++global->m_ndocs_saved;
                     /*******/
                     global->classifier.pop(id);
                     state = NEXT;
                     /*******/
                 }
             } else {
+                doc->save(global->mongodb_conn, global->mongodb_namespace);
+                ++global->m_ndocs_saved;
                 /*******/
                 global->classifier.pop(id);
                 state = NEXT;
@@ -936,19 +948,25 @@ void EasyHandle::done(CURLcode result)
 
         case CONTENT:
             // HTTP GET request finished
-            doc->url = eff_url;
-            doc->url.normalize();
             if( result == CURLE_OK && doc->http_code == 200) {
                 doc->headers = headers_os.str();
                 doc->content = content_os.str();
+                // parse HTTP headers
+                content_type::content_type_t ctype;
+                string charset;
+                map<string, string> headermap;
+                utils::parse_http_headers(doc->headers, ctype, charset, headermap);
+                doc->content_type = ctype;
+
                 doc->save(global->mongodb_conn, global->mongodb_namespace);
                 ++global->m_ndocs_saved;
-
                 /*******/
                 global->classifier.pop(id);
                 state = NEXT;
                 /*******/
             } else {
+                doc->save(global->mongodb_conn, global->mongodb_namespace);
+                ++global->m_ndocs_saved;
                 /*******/
                 global->classifier.pop(id);
                 state = NEXT;
@@ -1161,7 +1179,7 @@ void EasyHandle::head(const Url& url)
     mcode_or_die("get_content: curl_multi_add_handle", rc);
 }
 
-bool EasyHandle::admisible(content_type::content_type_t& ctype) const
+bool EasyHandle::acceptable(content_type::content_type_t& ctype) const
 {
     return ctype > content_type::UNRECOGNIZED && ctype < content_type::EMPTY;
 }

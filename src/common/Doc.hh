@@ -5,9 +5,8 @@
  * defined in file 'LICENSE.txt', which is part of this source
  * code package.
  */
+#pragma once
 
-#ifndef Doc_hh
-#define Doc_hh
 #include <string>
 #include "Url.hh"
 #include <boost/utility.hpp>
@@ -15,31 +14,7 @@
 #include <bitset>
 #include <boost/shared_ptr.hpp>
 #include "client/dbclient.h"
-
-#define LINKSFNAME        "links.gz"
-#define CONTENTSFNAME    "contents.gz"
-#define LEXEDFNAME        "contents_lexed.gz"
-#define WARNINGSFNAME    "warnings"
-#define TOKENSFNAME        "tokens.gz"
-#define TERM_VEC_DIR    "term_vec_dir"
-#define LEXICONFNAME    "lexicon"
-#define METAFNAME        "meta"
-#define NGRAMS            "ngrams"
-#define NGRAMSFILE        "ngrams.txt.gz"
-#define NGRAM_SPACE_DIR "ngram_space"
-#define NGRAM_SPACE_FILE "ngram_space.gz"
-#define NGRAM_SPACE_INFO_FILE "ngram_space_info.txt"
-#define NGRAM_VEC        "ngram_vec.gz"
-#define    TEMP_SUFFIX        ".tmp"
-#define MAXCONTENTSLEX    4194304
-#define IIDXFILE        "iidx.bin"
-
-#ifndef DB_DIR
-#define DB_DIR "mycelium_db"
-#endif
-
-
-#define DOC_UTF8_OK_FLAG 0x01
+#include "content_type.hh"
 
 
 /**
@@ -59,7 +34,7 @@ struct Doc : boost::noncopyable {
         content(),
         headers(),
         etag(),
-        content_type(),
+        content_type(content_type::UNSET),
         charset(),
         flags(0),
         title(),
@@ -104,5 +79,3 @@ struct Doc : boost::noncopyable {
     std::string    rss;
     std::string    atom;
 };
-
-#endif
