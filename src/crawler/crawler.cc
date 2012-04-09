@@ -1031,7 +1031,7 @@ void EasyHandle::done(CURLcode result)
             /// url disallowed
             } else {
 
-                LOG4CXX_INFO(logger, fs("handle id: " << id << ", url: " << url.get() << " not allowed (robots.txt)"));
+                LOG4CXX_DEBUG(logger, fs("handle id: " << id << ", url: " << url.get() << " not allowed (robots.txt)"));
                 /*******/
                 global->classifier.pop(id);
                 /*******/
