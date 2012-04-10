@@ -12,6 +12,26 @@ $ build/release/crawler
 $ echo 'http://google.com' | nc localhost 1024
 
 
+Status of the modules / Features
+================================
+- Crawler:
+    
+    Feature complete.
+
+- Tokenizer/Stemmer:
+    
+    Work in progress.
+
+- Inverted index:
+    
+    TODO
+
+- Search frontend:
+
+    TODO
+
+
+
 How to use it
 -------------
 
