@@ -862,7 +862,7 @@ void EasyHandle::done(CURLcode result)
     char *eff_url_p = NULL;
     // effective url, due to redirects
     curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &eff_url_p);
-    Url eff_url = eff_url_p;
+    Url eff_url(eff_url_p);
     eff_url.normalize();
     if (eff_url != doc->url)
         doc->eff_url = eff_url;
@@ -1363,8 +1363,8 @@ void GlobalInfo::status()
 {
     for (auto i = m_easyHandles.begin(); i != m_easyHandles.end(); ++i) {
         utils::timer timediff = utils::timer::current() - (*i)->last_resched_time;
-        if ((*i)->doc)
-            cout << "handle " << (*i)->id << ": " << statestr[(*i)->state] << ": " << format_timediff(timediff) << ": " << (*i)->dl_kBs << " k: " << (*i)->doc->url.to_string() << endl;
+        if ((*i)->doc && ! (*i)->state == EasyHandle::IDLE)
+            cout << "handle " << (*i)->id << ": " << statestr[(*i)->state] << ": " << format_timediff(timediff) << ": " << (*i)->dl_kBs << " KB/s down: " << (*i)->m_content_dl_bytes << " url: " << (*i)->doc->url.to_string() << endl;
         else
             cout << "handle " << (*i)->id << ": " << statestr[(*i)->state] << ": " << "NULL" << endl;
 
