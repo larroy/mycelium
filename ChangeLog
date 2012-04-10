@@ -1,3 +1,8 @@
+Version 1.0.6
+=============
+ - Critical fixes to binary storage of content in mongodb
+ - Critical fixes for state machine handling of robots.txt
+
 Version 1.0.5
 =============
  - Local indexer:
