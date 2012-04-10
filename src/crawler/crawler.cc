@@ -859,15 +859,14 @@ void EasyHandle::reschedule()
  */
 void EasyHandle::done(CURLcode result)
 {
-    char *eff_url = NULL;
+    char *eff_url_p = NULL;
     // effective url, due to redirects
-    curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &eff_url);
+    curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &eff_url_p);
+    Url eff_url = eff_url_p;
+    eff_url.normalize();
+    if (eff_url != doc->url)
+        doc->eff_url = eff_url;
 
-    Url orig_url = doc->url;
-    orig_url.normalize();
-
-    doc->url = eff_url;
-    doc->url.normalize();
     doc->curl_code = static_cast<int>(result);
     doc->curl_error.assign(curl_error);
 
@@ -1028,7 +1027,7 @@ void EasyHandle::done(CURLcode result)
                 break;
 
             /// robots is missing
-            } else if (! robots_entry || orig_url.host() != url.host()) {
+            } else if (! robots_entry || doc->url.host() != url.host()) {
                 /*******/
                 state = ROBOTS;
                 /*******/
