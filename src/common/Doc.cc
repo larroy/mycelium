@@ -22,7 +22,13 @@ void Doc::save(mongo::DBClientConnection& c, const string& ns)
 
     bson::bob b;
     //b.genOID();
+    //
+
     b.append("url", url.get());
+
+    if (! eff_url.empty())
+        b.append("eff_url", eff_url.get());
+
     if (http_code != 0)
         b.append("http_code", http_code);
 
@@ -84,6 +90,12 @@ bool Doc::load_url(mongo::DBClientConnection& c, const string& ns, const Url& _u
     bool gotone = false;
     while (cursor->more()) {
         mongo::BSONObj doc = cursor->next();
+
+        if (doc.hasField("eff_url")) {
+            string eff_url_tmp;
+            doc["eff_url"].Val(eff_url_tmp);
+            eff_url = eff_url_tmp;
+        }
 
         if (doc.hasField("http_code"))
             doc["http_code"].Val(http_code);

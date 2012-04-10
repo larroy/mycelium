@@ -26,6 +26,7 @@
 struct Doc : boost::noncopyable {
     Doc() :
         url(),
+        eff_url(),
         http_code(0),
         curl_code(-1),
         curl_error(),
@@ -61,6 +62,7 @@ struct Doc : boost::noncopyable {
     bool load_url(mongo::DBClientConnection&, const std::string& ns, const Url&);
 
     Url            url;
+    Url            eff_url;
     int            http_code;
     int            curl_code;
     std::string    curl_error;
