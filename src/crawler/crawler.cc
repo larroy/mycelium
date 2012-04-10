@@ -43,11 +43,16 @@
 
 
 /// Bytes/s
-#define LOW_SPEED_LIMIT 1024
+static const long LOW_SPEED_LIMIT = 1024;
+
 /// Seconds for the conn to be below LOW_SPEED_LIMIT
-#define LOW_SPEED_TIME 60
-#define CONNECTTIMEOUT 60
-#define MAXREDIRS 5
+static const long LOW_SPEED_TIME = 60;
+
+static const long CONNECTTIMEOUT = 60;
+static const long MAXREDIRS  = 5;
+
+/// When more than these bytes are transferred, the transfer is cutoff
+static const size_t CONTENT_SIZE_LIMIT = 1048576;
 
 /// default size for buffers
 #define BSIZE    8192
@@ -135,14 +140,14 @@ public:
     EasyHandle(GlobalInfo* g, size_t id):
         id(id),
         easy(0),
-        dl_bytes(0),
+        m_content_dl_bytes(0),
         dl_kBs(0),
         prev_dl_time(utils::timer::current()),
         last_resched_time(utils::timer::current()),
         prev_dl_cnt(0),
         doc(),
-        content_os(),
-        headers_os(),
+        m_content_os(),
+        m_headers_os(),
         robots_entry(),
         global(g),
         curl_error(),
@@ -165,6 +170,9 @@ public:
         }
     }
 
+    /// reset everything prior to a new transfer
+    void reset();
+
 
     /**
      * Set up an HTTP transfer depending on the state.
@@ -182,7 +190,7 @@ public:
 
     size_t   id;
     CURL     *easy;
-    uint64_t dl_bytes;
+    uint64_t m_content_dl_bytes;
     double   dl_kBs;
     utils::timer prev_dl_time;
     utils::timer last_resched_time;
@@ -190,8 +198,8 @@ public:
 
     boost::scoped_ptr<Doc> doc;
 
-    std::ostringstream content_os;
-    std::ostringstream headers_os;
+    std::ostringstream m_content_os;
+    std::ostringstream m_headers_os;
 
     boost::scoped_ptr<robots::Robots_entry> robots_entry;
 
@@ -282,7 +290,7 @@ public:
         still_running(0),
         m_ndocs_saved(0),
         classifier(parallel),
-        EasyHandles(),
+        m_easyHandles(),
         user_agent("mycelium web crawler - https://github.com/larroy/mycelium"),
         connections(),
         m_parallel(parallel),
@@ -316,9 +324,9 @@ public:
         curl_multi_setopt(multi, CURLMOPT_TIMERFUNCTION, multi_timer_cb);
         curl_multi_setopt(multi, CURLMOPT_TIMERDATA, this);
 
-        EasyHandles.reserve(m_parallel);
+        m_easyHandles.reserve(m_parallel);
         for(size_t i = 0; i < m_parallel; ++i)
-            EasyHandles.push_back(new EasyHandle(this,i));
+            m_easyHandles.push_back(new EasyHandle(this,i));
 
         listen();
         evtimer_set(&timer_event, timer_cb, this);
@@ -338,7 +346,7 @@ public:
     ~GlobalInfo()
     {
         for(size_t i = 0; i < m_parallel; ++i)
-            delete EasyHandles[i];
+            delete m_easyHandles[i];
 
         curl_multi_cleanup(multi);
     }
@@ -375,7 +383,7 @@ public:
     Url_classifier classifier;
 
     // easy handles
-    std::vector<EasyHandle*> EasyHandles;
+    std::vector<EasyHandle*> m_easyHandles;
 
     std::string user_agent;
     //int rate_limit;
@@ -551,9 +559,8 @@ size_t header_write_cb (void* buff, size_t size, size_t nmemb, void* data)
         throw runtime_error("null data on write_cb");
 
     size_t realsize = size * nmemb;
-    handle->dl_bytes += realsize;
     handle->global->dl_bytes += realsize;
-    handle->headers_os.write(static_cast<char*>(buff), realsize);
+    handle->m_headers_os.write(static_cast<char*>(buff), realsize);
     return realsize;
 }
 
@@ -565,9 +572,14 @@ size_t content_write_cb (void* buff, size_t size, size_t nmemb, void* data)
         throw runtime_error("null WRITEDATA on write_cb");
 
     size_t realsize = size * nmemb;
-    handle->dl_bytes += realsize;
+    handle->m_content_dl_bytes += realsize;
     handle->global->dl_bytes += realsize;
-    handle->content_os.write(static_cast<char*>(buff), realsize);
+    handle->m_content_os.write(static_cast<char*>(buff), realsize);
+
+    if (handle->m_content_dl_bytes > CONTENT_SIZE_LIMIT) {
+        LOG4CXX_DEBUG(logger, fs("handle id: " << handle->id << " size limit reached: " << handle->doc->url.get()));
+        return 0;
+    }
     return realsize;
 }
 
@@ -773,6 +785,15 @@ void log_cb(int severity, const char *s)
 }
 
 
+void EasyHandle::reset()
+{
+    curl_easy_reset(easy);
+    doc.reset(new Doc());
+    m_content_os.str("");
+    m_headers_os.str("");
+    m_content_dl_bytes = 0;
+    prev_dl_cnt = 0;
+}
 
 
 /// puts handle back to work, tries to dequeue next URL and set up a retrieval
@@ -781,12 +802,12 @@ void EasyHandle::reschedule()
     if( global->classifier.empty_top() && global->classifier.empty(id) )
         return;
 
-    curl_easy_reset(easy);
 
     Url url = global->classifier.peek(id);
     url.normalize();
 
-    doc.reset(new Doc());
+    reset();
+
     bool preexisting = doc->load_url(global->mongodb_conn, global->mongodb_namespace, url);
     LOG4CXX_DEBUG(logger, fs("handle id: " << id << " " << url.get() << " preexisting: " << preexisting));
     if (preexisting) {
@@ -795,8 +816,6 @@ void EasyHandle::reschedule()
         /*******/
     }
 
-    content_os.str("");
-    headers_os.str("");
 
     switch (state) {
         case IDLE:
@@ -844,6 +863,9 @@ void EasyHandle::done(CURLcode result)
     // effective url, due to redirects
     curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &eff_url);
 
+    Url orig_url = doc->url;
+    orig_url.normalize();
+
     doc->url = eff_url;
     doc->url.normalize();
     doc->curl_code = static_cast<int>(result);
@@ -880,12 +902,12 @@ void EasyHandle::done(CURLcode result)
             // program robots_entry
             if(result == CURLE_OK && doc->http_code == 200) {
                 try {
-                    istringstream robots_is(content_os.str());
-                    robots_entry.reset(new robots::Robots_entry(doc->url.host(), &robots_is));
+                    istringstream robots_is(m_content_os.str());
+                    robots_entry.reset(new robots::Robots_entry(&robots_is));
                     int res = robots_entry->yylex();
                     if( res < 0 ) {
                         // there's a lot of shit in the internet
-                        //LOG4CXX_DEBUG(logger, fs("Failure parsing robots: " << doc->url.get() << " " << content_os.str()));
+                        //LOG4CXX_DEBUG(logger, fs("Failure parsing robots: " << doc->url.get() << " " << m_content_os.str()));
                         robots_entry->clear();
                         ////////////
                         robots_entry->state = robots::EPARSE;
@@ -896,14 +918,14 @@ void EasyHandle::done(CURLcode result)
                         ////////////
                     }
                 } catch(...) {
-                    LOG4CXX_WARN(logger, fs("Exception while parsing robots: " << doc->url.get() << " " << content_os.str()));
+                    LOG4CXX_WARN(logger, fs("Exception while parsing robots: " << doc->url.get() << " " << m_content_os.str()));
                     ////////////
                     robots_entry->state = robots::EPARSE;
                     ////////////
                     robots_entry->clear();
                 }
             } else {
-                robots_entry.reset(new robots::Robots_entry(doc->url.host(), robots::NOT_AVAILABLE));
+                robots_entry.reset(new robots::Robots_entry(robots::NOT_AVAILABLE));
             }
             doc->content.clear();
             /*******/
@@ -915,7 +937,7 @@ void EasyHandle::done(CURLcode result)
         case HEAD:
             // an HTTP HEAD request finished
             if( result == CURLE_OK && doc->http_code == 200) {
-                doc->headers = headers_os.str();
+                doc->headers = m_headers_os.str();
 
                 // parse HTTP headers
                 content_type::content_type_t ctype;
@@ -953,8 +975,8 @@ void EasyHandle::done(CURLcode result)
         case CONTENT:
             // HTTP GET request finished
             if( result == CURLE_OK && doc->http_code == 200) {
-                doc->headers = headers_os.str();
-                doc->content = content_os.str();
+                doc->headers = m_headers_os.str();
+                doc->content = m_content_os.str();
                 // parse HTTP headers
                 content_type::content_type_t ctype;
                 string charset;
@@ -1006,7 +1028,7 @@ void EasyHandle::done(CURLcode result)
                 break;
 
             /// robots is missing
-            } else if (! robots_entry || url.host() != robots_entry->host) {
+            } else if (! robots_entry || orig_url.host() != url.host()) {
                 /*******/
                 state = ROBOTS;
                 /*******/
@@ -1014,10 +1036,9 @@ void EasyHandle::done(CURLcode result)
 
             /// url allowed by robots.txt or robots.txt not present, so allowed
             } else if (robots_entry
-                && (robots_entry->tried_but_failed(url.host())
+                && (robots_entry->tried_but_failed()
                     || (
                            robots_entry->state == robots::PRESENT
-                        && url.host() == robots_entry->host
                         && robots_entry->path_allowed(global->user_agent, url.path())
                     )
                 )
@@ -1201,7 +1222,7 @@ void GlobalInfo::listen()
 
 void GlobalInfo::reschedule()
 {
-    for(std::vector<EasyHandle*>::iterator i = EasyHandles.begin(); i != EasyHandles.end(); ++i) {
+    for (auto i = m_easyHandles.begin(); i != m_easyHandles.end(); ++i) {
         EasyHandle* h = *i;
         if( h->state == EasyHandle::IDLE ) {
             h->reschedule();
@@ -1341,7 +1362,7 @@ void GlobalInfo::interactive_process(bool flush)
 
 void GlobalInfo::status()
 {
-    for(std::vector<EasyHandle*>::iterator i = EasyHandles.begin(); i != EasyHandles.end(); ++i) {
+    for (auto i = m_easyHandles.begin(); i != m_easyHandles.end(); ++i) {
         utils::timer timediff = utils::timer::current() - (*i)->last_resched_time;
         if ((*i)->doc)
             cout << "handle " << (*i)->id << ": " << statestr[(*i)->state] << ": " << format_timediff(timediff) << ": " << (*i)->dl_kBs << " k: " << (*i)->doc->url.to_string() << endl;

@@ -168,42 +168,31 @@ namespace robots {
     };
 
     /**
-     * @brief Extends Robots so we have state and which host it belongs
+     * @brief Extends Robots so we have state
      */
     struct Robots_entry : public Robots {
-        Robots_entry(const std::string& host, std::istream* in) :
+        Robots_entry(std::istream* in) :
             Robots(in),
-            state(EMPTY),
-            host(host)
-        {}
-
-        Robots_entry(const std::string& host) :
-            Robots(),
-            state(EMPTY),
-            host(host)
-        {}
-
-        Robots_entry(const std::string& host,robots_state_t state) :
-            Robots(),
-            state(state),
-            host(host)
+            state(EMPTY)
         {}
 
         Robots_entry() :
             Robots(),
-            state(EMPTY),
-            host()
+            state(EMPTY)
         {}
 
-        bool tried_but_failed(const std::string& host) const
+        Robots_entry(robots_state_t state) :
+            Robots(),
+            state(state)
+        {}
+
+        bool tried_but_failed() const
         {
-            return host == this->host && (state == NOT_AVAILABLE || state == EPARSE);
+            return (state == NOT_AVAILABLE || state == EPARSE);
         }
 
         robots_state_t state;
-        std::string host;
     };
 };
 #endif
 /** @} */
-
