@@ -85,6 +85,7 @@ class Indexer:
         if res == 0:
             print ' ok.'
             doc.content = out
+            doc.content_type = document.TEXT_PLAIN
             doc.flags = 1
             doc.http_code = 200
         else:

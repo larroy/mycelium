@@ -75,6 +75,8 @@ void Doc::save(mongo::DBClientConnection& c, const string& ns)
     if (! atom.empty())
         b.append("atom", atom);
 
+    b.append("indexed", indexed);
+
     // upsert
     c.update(ns, BSON("url" << url.get()), BSON("$set" << b.obj()), true);
     //c.insert(ns, b.obj());
@@ -145,6 +147,9 @@ bool Doc::load_url(mongo::DBClientConnection& c, const string& ns, const Url& _u
 
         if (doc.hasField("atom"))
             doc["atom"].Val(atom);
+
+        if (doc.hasField("indexed"))
+            doc["indexed"].Val(indexed);
 
         if (gotone) {
             clog << "Got a duplicated document by url :(" << endl;

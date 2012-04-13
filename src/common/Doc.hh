@@ -41,7 +41,8 @@ struct Doc : boost::noncopyable {
         title(),
         rss2(),
         rss(),
-        atom()
+        atom(),
+        indexed(false)
     {}
     //Doc(const boost::filesystem::path&);
 
@@ -80,4 +81,5 @@ struct Doc : boost::noncopyable {
     std::string    rss2;
     std::string    rss;
     std::string    atom;
+    bool           indexed;
 };
