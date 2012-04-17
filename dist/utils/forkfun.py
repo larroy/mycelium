@@ -14,12 +14,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 """
-
+Multiprocessing module based in forkmap, depurated and with better error
+handling
 """
 
 __author__  = "Pedro Larroy"
-__version__ = "0.1"
-__date__    = "2011-07-29"
+__version__ = "0.2"
+__date__    = "2012-04"
 __maintainer__ = "Pedro Larroy http://pedro.larroy.com"
 
 import cPickle
@@ -27,9 +28,8 @@ import os
 import struct
 import sys
 import __builtin__
+from multiprocessing import cpu_count
 
-def numcores():
-    return int(os.popen('grep core\ id /proc/cpuinfo  | wc -l').read()[:-1])
 
 def forkfun(accumulator, function, sequence):
     """forkfun(accumulator, function, sequence)
@@ -56,7 +56,7 @@ def forkfun(accumulator, function, sequence):
     try:
         maxchildren = function.parallel_maxchildren
     except AttributeError:
-        maxchildren = numcores()
+        maxchildren = cpu_count()
 
     assert(function)
     assert(accumulator)
@@ -118,6 +118,7 @@ def forkfun(accumulator, function, sequence):
     while finished < len(sequence):
         returnchild, returnindex, value = recvmessage(fromchild)
         if isinstance(value, Exception):
+            # TODO: this could be improved
             raise value
 
         # If there are still values left to process, hand one
@@ -147,27 +148,20 @@ def forkfun(accumulator, function, sequence):
 
 
 
-def parallelizable(maxchildren=None, perproc=None):
+def parallelizable(maxchildren=None):
     """Mark a function as eligible for parallelized execution.  The
     function will run across a number of processes equal to
-    maxchildren, perproc times the number of processors installed on
-    the system, or the number of times the function needs to be run to
+    maxchildren or the number of times the function needs to be run to
     process all data passed to it - whichever is least."""
     if not maxchildren:
-        try:
-            maxchildren = numcores()
-        except ValueError:
-            maxchildren = 2
-
-    if perproc is not None:
-        processors = 4 # hand-waving
-        maxchildren = min(maxchildren, perproc * processors)
+        maxchildren = cpu_count()
 
     def decorate(f):
         """Set the parallel_maxchildren attribute to the value
         appropriate for this function"""
         setattr(f, 'parallel_maxchildren', maxchildren)
         return f
+
     return decorate
 
 
@@ -178,29 +172,9 @@ if __name__ == '__main__':
         y = x ** 3
         z = math.sqrt(y)
         return z
-        #x = math.acos(z)
-
 
     def acc(x):
         print x
         pass
-    forkfun(acc, f, xrange(10000))
 
-#if __name__ == '__main__':
-#    import doctest
-#    doctest.testmod()
-#
-#    @parallelizable(10, perproc=4)
-#    def timestwo(x, y):
-#        """Make pylint happy"""
-#        return (x + y) * 2
-#    print map(timestwo, [1, 2, 3, 4], [7, 8, 9, 10])
-#
-#    #@parallelizable(10)
-#    @parallelizable()
-#    def busybeaver(x):
-#        """Make pylint happy"""
-#        for i in range(10000000):
-#            x = x + i
-#        return x
-#    print map(busybeaver, range(27))
+    forkfun(acc, f, xrange(10000))
