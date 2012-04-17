@@ -95,10 +95,12 @@ def forkfun(accumulator, function, sequence):
                 try:
                     message = recvmessage(fromparent)
                     if message is None:
-                        sys.exit()
+                        sys.exit(0)
+
                     index, value = message
                     if not sendmessage(toparent, (childnum, index, function(value))):
                         sys.stderr.write('Child {0}: pipe eof\n'.format(childnum))
+                        sys.exit(1)
 
                 except Exception, excvalue:
                     sys.stderr.write('Exception: {0}\n'.format(excvalue))
@@ -108,7 +110,8 @@ def forkfun(accumulator, function, sequence):
 
                     if not sendmessage(toparent, (childnum, index, excvalue)):
                         sys.stderr.write('Child {0}: pipe eof\n'.format(childnum))
-                    sys.exit()
+                    sys.exit(1)
+            sys.exit(1)
 
     # Keep accepting values back from the children until they've
     # all come back
@@ -132,7 +135,16 @@ def forkfun(accumulator, function, sequence):
         sendmessage(child['tochild'], None)
 
     for child in children:
-        os.wait()
+        (pid, status) = os.wait()
+        if os.WIFEXITED(status):
+            st = os.WEXITSTATUS(status)
+            if st:
+                sys.stderr.write("forkfun: Child exited with nonzero status, while running: {0}\n".format(chain))
+                sys.exit(st)
+        else:
+            sys.stderr.write("forkfun: Child exited without exit(2)\n")
+            sys.exit(1)
+
 
 
 def parallelizable(maxchildren=None, perproc=None):
@@ -172,7 +184,7 @@ if __name__ == '__main__':
     def acc(x):
         print x
         pass
-    forkfun(acc, f, xrange(100000))
+    forkfun(acc, f, xrange(10000))
 
 #if __name__ == '__main__':
 #    import doctest
