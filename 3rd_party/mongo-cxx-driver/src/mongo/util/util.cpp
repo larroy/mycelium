@@ -17,7 +17,7 @@
 
 #include "pch.h"
 #include "goodies.h"
-#include "unittest.h"
+#include "mongo/util/startup_test.h"
 #include "file_allocator.h"
 #include "optime.h"
 #include "time_support.h"
@@ -135,9 +135,6 @@ namespace mongo {
         return "";
     }
 
-    vector<UnitTest*> *UnitTest::tests = 0;
-    bool UnitTest::running = false;
-
     const char *default_getcurns() { return ""; }
     const char * (*getcurns)() = default_getcurns;
 
@@ -165,7 +162,7 @@ namespace mongo {
         return n;
     }
 
-    struct UtilTest : public UnitTest {
+    struct UtilTest : public StartupTest {
         void run() {
             verify( isPrime(3) );
             verify( isPrime(2) );
@@ -194,24 +191,6 @@ namespace mongo {
             problem() << errmsg << endl;
         }
         printStackTrace();
-    }
-
-    /* note: can't use malloc herein - may be in signal handler.
-             logLockless() likely does not comply and should still be fixed todo
-             likewise class string?
-    */
-    void rawOut( const string &s ) {
-        if( s.empty() ) return;
-
-        char buf[64];
-        time_t_to_String( time(0) , buf );
-        /* truncate / don't show the year: */
-        buf[19] = ' ';
-        buf[20] = 0;
-
-        Logstream::logLockless(buf);
-        Logstream::logLockless(s);
-        Logstream::logLockless("\n");
     }
 
     ostream& operator<<( ostream &s, const ThreadSafeString &o ) {

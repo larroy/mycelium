@@ -28,7 +28,9 @@ namespace mongo {
 
     class IndexDetails;
     class IndexType;
-
+    
+    class QueryPlanSummary;
+    
     /** A plan for executing a query using the given index spec and FieldRangeSet. */
     class QueryPlan : boost::noncopyable {
     public:
@@ -41,8 +43,9 @@ namespace mongo {
                   const FieldRangeSetPair &frsp,
                   const FieldRangeSetPair *originalFrsp,
                   const BSONObj &originalQuery,
-                  const shared_ptr<Projection> &fields,
                   const BSONObj &order,
+                  const shared_ptr<const ParsedQuery> &parsedQuery =
+                          shared_ptr<const ParsedQuery>(),
                   const BSONObj &startKey = BSONObj(),
                   const BSONObj &endKey = BSONObj(),
                   string special="" );
@@ -69,7 +72,7 @@ namespace mongo {
         const string &special() const { return _special; }
                 
         /** @return a new cursor based on this QueryPlan's index and FieldRangeSet. */
-        shared_ptr<Cursor> newCursor( const DiskLoc &startLoc = DiskLoc() , int numWanted=0 ) const;
+        shared_ptr<Cursor> newCursor( const DiskLoc &startLoc = DiskLoc() ) const;
         /** @return a new reverse cursor if this is an unindexed plan. */
         shared_ptr<Cursor> newReverseCursor() const;
         /** Register this plan as a winner for its QueryPattern, with specified 'nscanned'. */
@@ -89,35 +92,19 @@ namespace mongo {
         
         shared_ptr<Projection::KeyOnly> keyFieldsOnly() const { return _keyFieldsOnly; }
         
-        /**
-         * A QueryPlan::Summary owns its own attributes and may be shared.  Currently a QueryPlan
-         * should only be owned by a QueryPlanSet.
-         */
-        struct Summary {
-            Summary() :
-            _scanAndOrderRequired() {
-            }
-            Summary( const QueryPlan &queryPlan ) :
-            _fieldRangeSetMulti( new FieldRangeSet( queryPlan._frsMulti ) ),
-            _keyFieldsOnly( queryPlan._keyFieldsOnly ),
-            _scanAndOrderRequired( queryPlan._scanAndOrderRequired ) {
-            }
-            bool valid() const { return _fieldRangeSetMulti; }
-            shared_ptr<FieldRangeSet> _fieldRangeSetMulti;
-            shared_ptr<Projection::KeyOnly> _keyFieldsOnly;
-            bool _scanAndOrderRequired;
-        };
-        Summary summary() const { return Summary( *this ); }
+        QueryPlanSummary summary() const;
 
-        /** The following member functions are just for testing. */
+        /** The following member functions are for testing, or public for testing. */
         
         shared_ptr<FieldRangeVector> frv() const { return _frv; }
         bool isMultiKey() const;
-        string toString() const;        
-        
+        string toString() const;
+        bool queryFiniteSetOrderSuffix() const;
+
     private:
         void checkTableScanAllowed() const;
         void warnOnCappedIdTableScan() const;
+        int independentRangesSingleIntervalLimit() const;
 
         NamespaceDetails * _d;
         int _idxNo;
@@ -125,6 +112,7 @@ namespace mongo {
         const FieldRangeSet &_frsMulti;
         const BSONObj &_originalQuery;
         const BSONObj &_order;
+        shared_ptr<const ParsedQuery> _parsedQuery;
         const IndexDetails * _index;
         bool _optimal;
         bool _scanAndOrderRequired;
@@ -141,6 +129,26 @@ namespace mongo {
         IndexType * _type;
         bool _startOrEndSpec;
         shared_ptr<Projection::KeyOnly> _keyFieldsOnly;
+    };
+
+    /**
+     * A QueryPlanSummary owns its own attributes and may be shared.  Currently a QueryPlan
+     * should only be owned by a QueryPlanSet.
+     */
+    class QueryPlanSummary {
+    public:
+        QueryPlanSummary() :
+        _scanAndOrderRequired() {
+        }
+        QueryPlanSummary( const QueryPlan &queryPlan ) :
+        _fieldRangeSetMulti( new FieldRangeSet( queryPlan.multikeyFrs() ) ),
+        _keyFieldsOnly( queryPlan.keyFieldsOnly() ),
+        _scanAndOrderRequired( queryPlan.scanAndOrderRequired() ) {
+        }
+        bool valid() const { return _fieldRangeSetMulti; }
+        shared_ptr<FieldRangeSet> _fieldRangeSetMulti;
+        shared_ptr<Projection::KeyOnly> _keyFieldsOnly;
+        bool _scanAndOrderRequired;
     };
 
     /**
@@ -297,8 +305,9 @@ namespace mongo {
                       auto_ptr<FieldRangeSetPair> frsp,
                       auto_ptr<FieldRangeSetPair> originalFrsp,
                       const BSONObj &originalQuery,
-                      const shared_ptr<Projection> &fields,
                       const BSONObj &order,
+                      const shared_ptr<const ParsedQuery> &parsedQuery =
+                              shared_ptr<const ParsedQuery>(),
                       const BSONObj &hint = BSONObj(),
                       RecordedPlanPolicy recordedPlanPolicy = Use,
                       const BSONObj &min = BSONObj(),
@@ -393,7 +402,6 @@ namespace mongo {
 
         const char *_ns;
         BSONObj _originalQuery;
-        shared_ptr<Projection> _fields;
         auto_ptr<FieldRangeSetPair> _frsp;
         auto_ptr<FieldRangeSetPair> _originalFrsp;
         PlanSet _plans;
@@ -402,6 +410,7 @@ namespace mongo {
         bool _usingCachedPlan;
         BSONObj _hint;
         BSONObj _order;
+        shared_ptr<const ParsedQuery> _parsedQuery;
         long long _oldNScanned;
         RecordedPlanPolicy _recordedPlanPolicy;
         BSONObj _min;
@@ -415,8 +424,9 @@ namespace mongo {
     public:
         MultiPlanScanner( const char *ns,
                           const BSONObj &query,
-                          const shared_ptr<Projection> &fields,
                           const BSONObj &order,
+                          const shared_ptr<const ParsedQuery> &parsedQuery =
+                                  shared_ptr<const ParsedQuery>(),
                           const BSONObj &hint = BSONObj(),
                           QueryPlanSet::RecordedPlanPolicy recordedPlanPolicy = QueryPlanSet::Use,
                           const BSONObj &min = BSONObj(),
@@ -524,15 +534,15 @@ namespace mongo {
         const string _ns;
         bool _or;
         BSONObj _query;
-        shared_ptr<Projection> _fields;
-        shared_ptr<OrRangeGenerator> _org; // May be null in certain non $or query cases.
+        shared_ptr<const ParsedQuery> _parsedQuery;
+        scoped_ptr<OrRangeGenerator> _org; // May be null in certain non $or query cases.
         auto_ptr<QueryPlanSet> _currentQps;
         int _i;
         QueryPlanSet::RecordedPlanPolicy _recordedPlanPolicy;
         BSONObj _hint;
         bool _tableScanned;
         shared_ptr<QueryOp> _baseOp;
-        shared_ptr<QueryPlanSet::Runner> _runner;
+        scoped_ptr<QueryPlanSet::Runner> _runner;
         shared_ptr<ExplainQueryInfo> _explainQueryInfo;
         bool _doneOps;
     };

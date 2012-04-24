@@ -3,7 +3,9 @@
 # This SConscript describes build and install rules for the Mongo C++ driver and associated exmaple
 # programs.
 
-Import('env clientEnv')
+import sys
+
+Import('env')
 
 clientSource = [
     'mongo/bson/oid.cpp',
@@ -55,14 +57,15 @@ clientSource = [
     ]
 
 exampleSourceMap = [
+        ('authTest', 'mongo/client/examples/authTest.cpp'),
+        ('clientTest', 'mongo/client/examples/clientTest.cpp'),
         ('firstExample', 'mongo/client/examples/first.cpp'),
+        ('httpClientTest', 'mongo/client/examples/httpClientTest.cpp'),
         ('rsExample', 'mongo/client/examples/rs.cpp'),
         ('secondExample', 'mongo/client/examples/second.cpp'),
+        ('tutorial', 'mongo/client/examples/tutorial.cpp'),
         ('whereExample', 'mongo/client/examples/whereExample.cpp'),
-        ('authTest', 'mongo/client/examples/authTest.cpp'),
-        ('httpClientTest', 'mongo/client/examples/httpClientTest.cpp'),
         ('bsondemo', 'mongo/bson/bsondemo/bsondemo.cpp'),
-        ('clientTest', 'mongo/client/examples/clientTest.cpp'),
         ]
 
 clientHeaders = []
@@ -83,38 +86,49 @@ for id in ["",
     clientHeaders.extend(Glob('mongo/%s/*.h' % id))
     clientHeaders.extend(Glob('mongo/%s/*.hpp' % id))
 
-env.Install('#/', [
-        env.Library('mongoclient', clientSource),
-        #env.SharedLibrary('mongoclient', clientSource),
-        ])
 
-clientTests = clientEnv.Install('#/', [
-        clientEnv.Program(target, [source]) for (target, source) in exampleSourceMap])
 
-clientEnv.Alias('clientTests', clientTests, [])
+if env.get('dont_install', False) == False:
+    env.Install('#/', [
+            env.Library('mongoclient_${BUILD}', clientSource),
+            #env.SharedLibrary('mongoclient', clientSource),
+            ])
 
-env.Install(
-    '#/',
-    env.Command('$CLIENT_ARCHIVE',
-                ['#buildscripts/make_archive.py',
-                 '$CLIENT_SCONSTRUCT',
-                 '$CLIENT_LICENSE',
-                 'SConscript.client',
-                 '#buildscripts/make_archive.py',
-                 clientSource,
-                 clientHeaders,
-                 [source for (target, source) in exampleSourceMap]],
-                '${PYTHON} ${SOURCES[0]} -o $TARGET '
-                '--transform ${str(Dir(BUILD_DIR))}/client_build=$CLIENT_DIST_BASENAME/src '
-                '--transform ${str(Dir(BUILD_DIR))}=$CLIENT_DIST_BASENAME/src '
-                '--transform distsrc/client=$CLIENT_DIST_BASENAME '
-                '--transform =$CLIENT_DIST_BASENAME/ '
-                '${TEMPFILE(SOURCES[1:])}'))
 
+#if sys.platform == 'win32':
+#    dbg_env.Install('#/', [
+#            dbg_env.Library('mongoclient_dbg', clientSource),
+#           ])
+
+
+
+#clientTests = clientEnv.Install('#/', [
+#        clientEnv.Program(target, [source]) for (target, source) in exampleSourceMap])
+
+#clientEnv.Alias('clientTests', clientTests, [])
+
+#env.Install(
+#    '#/',
+#    env.Command('$CLIENT_ARCHIVE',
+#                ['#buildscripts/make_archive.py',
+#                 '$CLIENT_SCONSTRUCT',
+#                 '$CLIENT_LICENSE',
+#                 'SConscript.client',
+#                 '#buildscripts/make_archive.py',
+#                 clientSource,
+#                 clientHeaders,
+#                 [source for (target, source) in exampleSourceMap]],
+#                '${PYTHON} ${SOURCES[0]} -o $TARGET '
+#                '--transform ${str(Dir(BUILD_DIR))}/client_build=$CLIENT_DIST_BASENAME/src '
+#                '--transform ${str(Dir(BUILD_DIR))}=$CLIENT_DIST_BASENAME/src '
+#                '--transform distsrc/client=$CLIENT_DIST_BASENAME '
+#                '--transform =$CLIENT_DIST_BASENAME/ '
+#                '${TEMPFILE(SOURCES[1:])}'))
+#
 # install
 prefix = GetOption("prefix")
 
-env.Install(prefix + "/lib", '${LIBPREFIX}mongoclient${LIBSUFFIX}')
+env.Install(prefix + "/lib", '${LIBPREFIX}mongoclient_${BUILD}${LIBSUFFIX}')
 
 for x in ["",
           "bson/",

@@ -17,9 +17,6 @@
 
 #pragma once
 
-#ifndef _WIN32
-#include <signal.h>
-#endif
 
 namespace mongo {
 
@@ -41,8 +38,10 @@ namespace mongo {
 
 #if defined(_DEBUG)
     enum {DEBUG_BUILD = 1};
+    const bool debug=true;
 #else
     enum {DEBUG_BUILD = 0};
+    const bool debug=false;
 #endif
 
 #define MONGO_DEV if( DEBUG_BUILD )
@@ -74,26 +73,10 @@ namespace mongo {
     void setupSIGTRAPforGDB();
 
     extern int tlogLevel;
-
+    void mongo_breakpoint();
     inline void breakpoint() {
         if ( tlogLevel < 0 )
             return;
-#ifdef _WIN32
-        DEV DebugBreak();
-#endif
-#ifndef _WIN32
-        // code to raise a breakpoint in GDB
-        ONCE {
-            //prevent SIGTRAP from crashing the program if default action is specified and we are not in gdb
-            struct sigaction current;
-            sigaction(SIGTRAP, NULL, &current);
-            if (current.sa_handler == SIG_DFL) {
-                signal(SIGTRAP, SIG_IGN);
-            }
-        }
-
-        raise(SIGTRAP);
-#endif
+        mongo_breakpoint();
     }
-
 } // namespace mongo

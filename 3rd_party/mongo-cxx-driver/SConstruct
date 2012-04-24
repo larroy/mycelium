@@ -1,9 +1,15 @@
+##!/usr/bin/python /usr/bin/scons
+# -*- coding: utf-8 -*-
 # -*- mode: python -*-
 
 # scons file for MongoDB c++ client library and examples
 
 import os
 import sys
+
+# global configuration
+g_CONFIGURATION = dict()
+
 
 # options
 AddOption("--extrapath",
@@ -21,14 +27,22 @@ AddOption("--prefix",
           default="/usr/local",
           help="installation root")
 
+AddOption("--build",
+          dest="build",
+          type="string",
+          nargs=1,
+          action="store",
+          help="specify build=(debug|release)")
 
-env = Environment(BUILD_DIR='#build',
-                  CLIENT_ARCHIVE='${CLIENT_DIST_BASENAME}${DIST_ARCHIVE_SUFFIX}',
-                  CLIENT_DIST_BASENAME='mongo-cxx-driver',
-                  CLIENT_LICENSE='#LICENSE.txt',
-                  CLIENT_SCONSTRUCT='#SConstruct',
-                  MSVS_ARCH=None,
-                  PYTHON=sys.executable)
+
+g_CONFIGURATION['build'] = GetOption('build')
+if not g_CONFIGURATION['build']:
+    g_CONFIGURATION['build'] = 'release'
+
+
+env = Environment(BUILD_DIR='#build/{0}'.format(g_CONFIGURATION['build']),
+    BUILD=g_CONFIGURATION['build'],
+    MSVS_ARCH=None)
 
 def addExtraLibs(s):
     for x in s.split(","):
@@ -49,36 +63,78 @@ linux = False
 if "darwin" == sys.platform:
     addExtraLibs( "/opt/local/" )
     nix = True
+
 elif sys.platform in ("linux2", "linux3"):
     nix = True
     linux = True
 
-if sys.platform is 'win32':
-    env['DIST_ARCHIVE_SUFFIX'] = '.zip'
-else:
-    env['DIST_ARCHIVE_SUFFIX'] = '.tgz'
+
+boostdir = Dir(r'..\boost').get_abspath()
+
+if sys.platform == 'win32':
+    assert(os.path.exists(boostdir))
+    ccflags = [
+        '/EHsc',
+        '/MD',
+        '/DUNICODE',  # This makes me wish I was never born
+        '/D_UNICODE', # This too
+        r'/I{0}'.format(boostdir),
+    ]
+    if g_CONFIGURATION['build'] == 'debug':
+        ccflags.append('/Zi')  # debug
+        ccflags.append('/Od')  # disable optimizations
+    else:
+        ccflags.append('/O2')
+
+    env.Append(CCFLAGS=ccflags)
+
 
 if nix:
-    env.Append(CCFLAGS=["-O3", "-pthread"])
+    ccflags = [
+        "-pthread",
+        '-I{0}'.format(boostdir)
+    ]
+    if g_CONFIGURATION['build'] == 'debug':
+        ccflags.append('-O0')
+        ccflags.append('-ggdb2')
+
+    else:
+        ccflags.append('-O3')
+
+    env.Append(CCFLAGS=ccflags)
+
 if linux:
-    env.Append(LINKFLAGS=["-Wl,--as-needed", "-Wl,-zdefs"])
+    env.Append(LINKFLAGS=[
+        "-Wl,--as-needed",
+        "-Wl,-zdefs"
+    ])
 
-boostLibs = ["thread", "filesystem", "system"]
-conf = Configure(env)
-for lib in boostLibs:
-    if not conf.CheckLib(["boost_%s-mt" % lib, "boost_%s" % lib],
-                         language="C++"):
-        Exit(1)
-conf.Finish()
 
-clientEnv = env.Clone()
-clientEnv['CPPDEFINES'].remove('MONGO_EXPOSE_MACROS')
-clientEnv.Prepend(LIBS=['mongoclient'], LIBPATH=['.'])
+#print env.Dump()
 
-Export("env clientEnv")
+# This shit doesn't work on windows for some reason.
+if sys.platform != 'win32':
+    boostLibs = ["thread", "filesystem", "system"]
+    conf = Configure(env)
+    for lib in boostLibs:
+        if not conf.CheckLib(["boost_%s-mt" % lib, "boost_%s" % lib],
+                             language="C++"):
+            Exit(1)
+    conf.Finish()
+
+#clientEnv = env.Clone()
+#clientEnv['CPPDEFINES'].remove('MONGO_EXPOSE_MACROS')
+#clientEnv.Prepend(LIBS=['mongoclient'], LIBPATH=['.'])
+
+Export("env")
+
+
 env.SConscript('src/SConscript.client', variant_dir='$BUILD_DIR', duplicate=False)
+if sys.platform == 'win32':
+    env.Append(CCFLAGS=['/Zi'])
 
-env.Default('${LIBPREFIX}mongoclient${LIBSUFFIX}')
+
+env.Default('${LIBPREFIX}mongoclient_${BUILD}${LIBSUFFIX}')
 
 
 # install

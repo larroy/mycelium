@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "queryoptimizer.h"
+#include "mongo/db/queryutil.h"
 #include "queryoptimizercursor.h"
 
 namespace mongo {
@@ -167,6 +167,9 @@ namespace mongo {
         long long _accesses;
     };
     
+    class QueryPlanSummary;
+    class MultiPlanScanner;
+    
     /**
      * Helper class for generating a simple Cursor or QueryOptimizerCursor from a set of query
      * parameters.  This class was refactored from a single function call and is not expected to
@@ -179,8 +182,8 @@ namespace mongo {
                         const BSONObj &order,
                         const QueryPlanSelectionPolicy &planPolicy,
                         bool *simpleEqualityMatch,
-                        const ParsedQuery *parsedQuery,
-                        QueryPlan::Summary *singlePlanSummary );
+                        const shared_ptr<const ParsedQuery> &parsedQuery,
+                        QueryPlanSummary *singlePlanSummary );
         
         shared_ptr<Cursor> generate();
         
@@ -189,17 +192,12 @@ namespace mongo {
         bool explain() const { return _parsedQuery && _parsedQuery->isExplain(); }
         BSONObj min() const { return _parsedQuery ? _parsedQuery->getMin() : BSONObj(); }
         BSONObj max() const { return _parsedQuery ? _parsedQuery->getMax() : BSONObj(); }
-        shared_ptr<Projection> fieldsPtr() const {
-            return _parsedQuery ? _parsedQuery->getFieldPtr() : shared_ptr<Projection>();
-        }
-        int numWanted() const {
-            return _parsedQuery ? ( _parsedQuery->getSkip() + _parsedQuery->getNumToReturn() ) : 0;
-        }
+        bool hasFields() const { return _parsedQuery && _parsedQuery->getFieldPtr(); }
         
         /** If no ParsedQuery was supplied, it's assumed no reordering will be applied. */
-        bool requireOrder() const { return _parsedQuery == 0; }
+        bool requireOrder() const { return !_parsedQuery; }
         bool mayShortcutQueryOptimizer() const {
-            return min().isEmpty() && max().isEmpty() && !fieldsPtr() && _argumentsHint.isEmpty();
+            return min().isEmpty() && max().isEmpty() && !hasFields() && _argumentsHint.isEmpty();
         }
         BSONObj hint() const {
             return _argumentsHint.isEmpty() ? _planPolicy.planHint( _ns ) : _argumentsHint;
@@ -215,8 +213,8 @@ namespace mongo {
         BSONObj _order;
         const QueryPlanSelectionPolicy &_planPolicy;
         bool *_simpleEqualityMatch;
-        const ParsedQuery *_parsedQuery;
-        QueryPlan::Summary *_singlePlanSummary;
+        shared_ptr<const ParsedQuery> _parsedQuery;
+        QueryPlanSummary *_singlePlanSummary;
         
         BSONObj _argumentsHint;
         auto_ptr<MultiPlanScanner> _mps;

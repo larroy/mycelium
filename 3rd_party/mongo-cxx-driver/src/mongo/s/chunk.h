@@ -21,12 +21,12 @@
 #include "../pch.h"
 
 #include "../bson/util/atomic_int.h"
-#include "../client/dbclient.h"
 #include "../client/distlock.h"
 
 #include "shardkey.h"
 #include "shard.h"
 #include "util.h"
+#include "mongo/util/concurrency/ticketholder.h"
 
 namespace mongo {
 

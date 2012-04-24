@@ -26,7 +26,6 @@
 #include "mongo/db/jsobj.h"
 #include "mongo/db/mongommf.h"
 #include "mongo/db/namespace.h"
-#include "mongo/db/queryoptimizer.h"
 #include "mongo/db/queryoptimizercursor.h"
 #include "mongo/db/querypattern.h"
 #include "mongo/util/hashtab.h"
@@ -78,13 +77,15 @@ namespace mongo {
     private:
         // ofs 192
         IndexDetails _indexes[NIndexesBase];
-    public:
+
         // ofs 352 (16 byte aligned)
-        int capped;
-        int max;                              // max # of objects for a capped table.  TODO: should this be 64 bit?
-        double paddingFactor;                 // 1.0 = no padding.
+        int _isCapped;                         // there is wasted space here if I'm right (ERH)
+        int _maxDocsInCapped;                  // max # of objects for a capped table.  TODO: should this be 64 bit?
+
+        double _paddingFactor;                 // 1.0 = no padding.
         // ofs 386 (16)
-        int flags;
+        int _systemFlags; // things that the system sets/cares about
+    public:
         DiskLoc capExtent;
         DiskLoc capFirstNewRecord;
         unsigned short dataFileVersion;       // NamespaceDetails version.  So we can do backward compatibility in the future. See filever.h
@@ -96,15 +97,11 @@ namespace mongo {
         long long extraOffset;                // where the $extra info is located (bytes relative to this)
     public:
         int indexBuildInProgress;             // 1 if in prog
-        unsigned reservedB;
-        // ofs 424 (8)
-        struct Capped2 {
-            unsigned long long cc2_ptr;       // see capped.cpp
-            unsigned fileNumber;
-        } capped2;
-        char reserved[60];
+    private:
+        int _userFlags;
+        char reserved[72];
         /*-------- end data 496 bytes */
-
+    public:
         explicit NamespaceDetails( const DiskLoc &loc, bool _capped );
 
         class Extra {
@@ -158,10 +155,16 @@ namespace mongo {
         bool nextIsInCapExtent( const DiskLoc &dl ) const;
 
     public:
+
+        bool isCapped() const { return _isCapped; }
+        long long maxCappedDocs() const { verify( isCapped() ); return _maxDocsInCapped; }
+        void setMaxCappedDocs( long long max );
+
+
         DiskLoc& cappedListOfAllDeletedRecords() { return deletedList[0]; }
         DiskLoc& cappedLastDelRecLastExtent()    { return deletedList[1]; }
         void cappedDumpDelInfo();
-        bool capLooped() const { return capped && capFirstNewRecord.isValid();  }
+        bool capLooped() const { return _isCapped && capFirstNewRecord.isValid();  }
         bool inCapExtent( const DiskLoc &dl ) const;
         void cappedCheckMigrate();
         /**
@@ -182,8 +185,12 @@ namespace mongo {
         /* NOTE: be careful with flags.  are we manipulating them in read locks?  if so,
                  this isn't thread safe.  TODO
         */
-        enum NamespaceFlags {
+        enum SystemFlags {
             Flag_HaveIdIndex = 1 << 0 // set when we have _id index (ONLY if ensureIdIndex was called -- 0 if that has never been called)
+        };
+
+        enum UserFlags {
+            Flag_UsePowerOf2Sizes = 1 << 0
         };
 
         IndexDetails& idx(int idxNo, bool missingExpected = false );
@@ -235,11 +242,24 @@ namespace mongo {
         IndexDetails& addIndex(const char *thisns, bool resetTransient=true);
 
         void aboutToDeleteAnIndex() { 
-            *getDur().writing(&flags) = flags & ~Flag_HaveIdIndex;
+            clearSystemFlag( Flag_HaveIdIndex );
         }
 
         /* returns index of the first index in which the field is present. -1 if not present. */
         int fieldIsIndexed(const char *fieldName);
+
+        /**
+         * @return the actual size to create
+         *         will be >= oldRecordSize
+         *         based on padding and any other flags
+         */
+        int getRecordAllocationSize( int minRecordSize );
+
+        double paddingFactor() const { return _paddingFactor; }
+
+        void setPaddingFactor( double paddingFactor ) {
+            *getDur().writing(&_paddingFactor) = paddingFactor;
+        }
 
         /* called to indicate that an update fit in place.  
            fits also called on an insert -- idea there is that if you had some mix and then went to
@@ -252,9 +272,9 @@ namespace mongo {
         */
         void paddingFits() {
             MONGO_SOMETIMES(sometimes, 4) { // do this on a sampled basis to journal less
-                double x = paddingFactor - 0.001;
+                double x = _paddingFactor - 0.001;
                 if ( x >= 1.0 ) {
-                    *getDur().writing(&paddingFactor) = x;
+                    setPaddingFactor( x );
                 }
             }
         }
@@ -268,9 +288,9 @@ namespace mongo {
                    this should be an adequate starting point.
                 */
                 double N = min(nIndexes,7) + 3;
-                double x = paddingFactor + (0.001 * N);
+                double x = _paddingFactor + (0.001 * N);
                 if ( x <= 2.0 ) {
-                    *getDur().writing(&paddingFactor) = x;
+                    setPaddingFactor( x );
                 }
             }
         }
@@ -289,6 +309,16 @@ namespace mongo {
             }
         }
 
+        const int systemFlags() const { return _systemFlags; }
+        bool isSystemFlagSet( int flag ) const { return _systemFlags & flag; }
+        void setSystemFlag( int flag );
+        void clearSystemFlag( int flag );
+
+        const int userFlags() const { return _userFlags; }
+        bool isUserFlagSet( int flag ) const { return _userFlags & flag; }
+        void setUserFlag( int flag );
+        void clearUserFlag( int flag );
+
         /* @return -1 = not found
            generally id is first index, so not that expensive an operation (assuming present).
         */
@@ -302,7 +332,7 @@ namespace mongo {
         }
 
         bool haveIdIndex() { 
-            return (flags & NamespaceDetails::Flag_HaveIdIndex) || findIdIndex() >= 0;
+            return isSystemFlagSet( NamespaceDetails::Flag_HaveIdIndex ) || findIdIndex() >= 0;
         }
 
         /* return which "deleted bucket" for this size object */
@@ -364,6 +394,9 @@ namespace mongo {
     }; // NamespaceDetails
 #pragma pack()
 
+    class ParsedQuery;
+    class QueryPlanSummary;
+    
     /* NamespaceDetailsTransient
 
        these are things we know / compute about a namespace that are transient -- things
@@ -439,8 +472,9 @@ namespace mongo {
                                             const QueryPlanSelectionPolicy &planPolicy =
                                             QueryPlanSelectionPolicy::any(),
                                             bool *simpleEqualityMatch = 0,
-                                            const ParsedQuery *parsedQuery = 0,
-                                            QueryPlan::Summary *singlePlanSummary = 0 );
+                                            const shared_ptr<const ParsedQuery> &parsedQuery =
+                                            shared_ptr<const ParsedQuery>(),
+                                            QueryPlanSummary *singlePlanSummary = 0 );
 
         /**
          * @return a single cursor that may work well for the given query.  A $or style query will
@@ -563,7 +597,7 @@ namespace mongo {
                 return 0;
             Namespace n(ns);
             NamespaceDetails *d = ht->get(n);
-            if ( d && d->capped )
+            if ( d && d->isCapped() )
                 d->cappedCheckMigrate();
             return d;
         }

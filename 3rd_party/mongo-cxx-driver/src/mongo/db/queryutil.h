@@ -24,18 +24,6 @@
 namespace mongo {
     
     extern const int MaxBytesToReturnToClientAtOnce;
-
-    /** Helper class for deduping DiskLocs */
-    class DiskLocDupSet {
-    public:
-        /** @return true if dup, otherwise return false and insert. */
-        bool getsetdup( const DiskLoc &loc ) {
-            pair<set<DiskLoc>::iterator, bool> p = _dups.insert(loc);
-            return !p.second;
-        }
-    private:
-        set<DiskLoc> _dups;
-    };
     
     /* This is for languages whose "objects" are not well ordered (JSON is well ordered).
      [ { a : ... } , { b : ... } ] -> { a : ..., b : ... }
@@ -59,7 +47,7 @@ namespace mongo {
         
         return b.obj();
     }
-    
+
     class QueryMessage;
     
     /**
@@ -319,6 +307,14 @@ namespace mongo {
         bool universal() const;
         /** @return true iff this range includes no BSONElements. */
         bool empty() const { return _intervals.empty(); }
+        /**
+         * @return true in many cases when this FieldRange describes a finite set of BSONElements,
+         * all of which will be matched by the query BSONElement that generated this FieldRange.
+         * This attribute is used to implement higher level optimizations and is computed with a
+         * simple implementation that identifies common (but not all) cases satisfying the stated
+         * properties.
+         */
+        bool simpleFiniteSet() const { return _simpleFiniteSet; }
         
         /** Empty the range so it includes no BSONElements. */
         void makeEmpty() { _intervals.clear(); }
@@ -336,12 +332,14 @@ namespace mongo {
         string toString() const;
     private:
         BSONObj addObj( const BSONObj &o );
-        void finishOperation( const vector<FieldInterval> &newIntervals, const FieldRange &other );
+        void finishOperation( const vector<FieldInterval> &newIntervals, const FieldRange &other,
+                             bool simpleFiniteSet );
         vector<FieldInterval> _intervals;
         // Owns memory for our BSONElements.
         vector<BSONObj> _objData;
         string _special;
         bool _singleKey;
+        bool _simpleFiniteSet;
     };
     
     /**
@@ -385,6 +383,14 @@ namespace mongo {
          * @param keyPattern May be {} or {$natural:1} for a non index scan.
          */
         bool matchPossibleForIndex( const BSONObj &keyPattern ) const;
+        /**
+         * @return true in many cases when this FieldRangeSet describes a finite set of BSONObjs,
+         * all of which will be matched by the query BSONObj that generated this FieldRangeSet.
+         * This attribute is used to implement higher level optimizations and is computed with a
+         * simple implementation that identifies common (but not all) cases satisfying the stated
+         * properties.
+         */
+        bool simpleFiniteSet() const { return _simpleFiniteSet; }
         
         const char *ns() const { return _ns.c_str(); }
         
@@ -438,6 +444,10 @@ namespace mongo {
         void makeEmpty();
         void processQueryField( const BSONElement &e, bool optimize );
         void processOpElement( const char *fieldName, const BSONElement &f, bool isNot, bool optimize );
+        /** Must be called when a match element is skipped or modified to generate a FieldRange. */
+        void adjustMatchField();
+        void intersectMatchField( const char *fieldName, const BSONElement &matchElement,
+                                 bool isNot, bool optimize );
         static FieldRange *__singleKeyUniversalRange;
         static FieldRange *__multiKeyUniversalRange;
         const FieldRange &universalRange() const;
@@ -446,6 +456,7 @@ namespace mongo {
         // Owns memory for FieldRange BSONElements.
         vector<BSONObj> _queries;
         bool _singleKey;
+        bool _simpleFiniteSet;
     };
 
     class NamespaceDetails;
@@ -536,7 +547,7 @@ namespace mongo {
         FieldRangeVector( const FieldRangeSet &frs, const IndexSpec &indexSpec, int direction );
 
         /** @return the number of index ranges represented by 'this' */
-        long long size();
+        unsigned size();
         /** @return starting point for an index traversal. */
         BSONObj startKey() const;
         /** @return end point for an index traversal. */
@@ -579,40 +590,125 @@ namespace mongo {
      */
     class FieldRangeVectorIterator {
     public:
-        FieldRangeVectorIterator( const FieldRangeVector &v ) : _v( v ), _i( _v._ranges.size(), -1 ), _cmp( _v._ranges.size(), 0 ), _inc( _v._ranges.size(), false ), _after() {
-        }
-        static BSONObj minObject() {
-            BSONObjBuilder b; b.appendMinKey( "" );
-            return b.obj();
-        }
-        static BSONObj maxObject() {
-            BSONObjBuilder b; b.appendMaxKey( "" );
-            return b.obj();
-        }
         /**
-         * @return Suggested advance method, based on current key.
-         *   -2 Iteration is complete, no need to advance.
-         *   -1 Advance to the next key, without skipping.
-         *  >=0 Skip parameter.  If @return is r, skip to the key comprised
-         *      of the first r elements of curr followed by the (r+1)th and
-         *      remaining elements of cmp() (with inclusivity specified by
-         *      the (r+1)th and remaining elements of inc()).  If after() is
-         *      true, skip past this key not to it.
+         * @param v - a FieldRangeVector representing matching keys.
+         * @param singleIntervalLimit - The maximum number of keys to match a single (compound)
+         *     interval before advancing to the next interval.  Limit checking is disabled if 0 and
+         *     must be disabled if v contains FieldIntervals that are not equality().
+         */
+        FieldRangeVectorIterator( const FieldRangeVector &v, int singleIntervalLimit );
+
+        /**
+         * @return Suggested advance method through an ordered list of keys with lookup support
+         *      (generally a btree).
+         *   -2 Iteration is complete, no need to advance further.
+         *   -1 Advance to the next ordered key, without skipping.
+         *  >=0 Skip parameter, let's call it 'r'.  If after() is true, skip past the key prefix
+         *      comprised of the first r elements of curr.  For example, if curr is {a:1,b:1}, the
+         *      index is {a:1,b:1}, the direction is 1, and r == 1, skip past {a:1,b:MaxKey}.  If
+         *      after() is false, skip to the key comprised of the first r elements of curr followed
+         *      by the (r+1)th and greater elements of cmp() (with inclusivity specified by the
+         *      (r+1)th and greater elements of inc()).  For example, if curr is {a:1,b:1}, the
+         *      index is {a:1,b:1}, the direction is 1, r == 1, cmp()[1] == b:4, and inc()[1] ==
+         *      true, then skip to {a:1,b:4}.  Note that the element field names in curr and cmp()
+         *      should generally be ignored when performing index key comparisons.
+         * @param curr The key at the current position in the list of keys.  Values of curr must be
+         *      supplied in order.
          */
         int advance( const BSONObj &curr );
         const vector<const BSONElement *> &cmp() const { return _cmp; }
         const vector<bool> &inc() const { return _inc; }
         bool after() const { return _after; }
         void prepDive();
-        void setZero( int i ) { for( int j = i; j < (int)_i.size(); ++j ) _i[ j ] = 0; }
-        void setMinus( int i ) { for( int j = i; j < (int)_i.size(); ++j ) _i[ j ] = -1; }
-        bool ok() { return _i[ 0 ] < (int)_v._ranges[ 0 ].intervals().size(); }
-        BSONObj startKey();
-        // temp
-        BSONObj endKey();
+
+        /**
+         * Helper class representing a position within a vector of ranges.  Public for testing.
+         */
+        class CompoundRangeCounter {
+        public:
+            CompoundRangeCounter( int size, int singleIntervalLimit );
+            int size() const { return (int)_i.size(); }
+            int get( int i ) const { return _i[ i ]; }
+            void set( int i, int newVal );
+            void inc( int i );
+            void setZeroes( int i );
+            void setUnknowns( int i );
+            void incSingleIntervalCount() {
+                if ( isTrackingIntervalCounts() ) ++_singleIntervalCount;
+            }
+            bool hasSingleIntervalCountReachedLimit() const {
+                return isTrackingIntervalCounts() && _singleIntervalCount >= _singleIntervalLimit;
+            }
+            void resetIntervalCount() { _singleIntervalCount = 0; }
+        private:
+            bool isTrackingIntervalCounts() const { return _singleIntervalLimit > 0; }
+            vector<int> _i;
+            int _singleIntervalCount;
+            int _singleIntervalLimit;
+        };
+
+        /**
+         * Helper class for matching a BSONElement with the bounds of a FieldInterval.  Some
+         * internal comparison results are cached. Public for testing.
+         */
+        class FieldIntervalMatcher {
+        public:
+            FieldIntervalMatcher( const FieldInterval &interval, const BSONElement &element,
+                                 bool reverse );
+            bool isEqInclusiveUpperBound() const {
+                return upperCmp() == 0 && _interval._upper._inclusive;
+            }
+            bool isGteUpperBound() const { return upperCmp() >= 0; }
+            bool isEqExclusiveLowerBound() const {
+                return lowerCmp() == 0 && !_interval._lower._inclusive;
+            }
+            bool isLtLowerBound() const { return lowerCmp() < 0; }
+        private:
+            struct BoundCmp {
+                BoundCmp() : _cmp(), _valid() {}
+                void set( int cmp ) { _cmp = cmp; _valid = true; }
+                int _cmp;
+                bool _valid;
+            };
+            int mayReverse( int val ) const { return _reverse ? -val : val; }
+            int cmp( const BSONElement &bound ) const {
+                return mayReverse( _element.woCompare( bound, false ) );
+            }
+            void setCmp( BoundCmp &boundCmp, const BSONElement &bound ) const {
+                boundCmp.set( cmp( bound ) );
+            }
+            int lowerCmp() const;
+            int upperCmp() const;
+            const FieldInterval &_interval;
+            const BSONElement &_element;
+            bool _reverse;
+            mutable BoundCmp _lowerCmp;
+            mutable BoundCmp _upperCmp;
+        };
+
     private:
+        /**
+         * @return values similar to advance()
+         *   -2 Iteration is complete for the current interval.
+         *   -1 Iteration is not complete for the current interval.
+         *  >=0 Return value to be forwarded by advance().
+         */
+        int validateCurrentInterval( int intervalIdx, const BSONElement &currElt,
+                                    bool reverse, bool first, bool &eqInclusiveUpperBound );
+        
+        /** Skip to curr / i / nextbounds. */
+        int advanceToLowerBound( int i );
+        /** Skip to curr / i / superlative. */
+        int advancePast( int i );
+        /** Skip to curr / i / superlative and reset following interval positions. */
+        int advancePastZeroed( int i );
+
+        bool hasReachedLimitForLastInterval( int intervalIdx ) const {
+            return _i.hasSingleIntervalCountReachedLimit() && ( intervalIdx + 1 == _i.size() );
+        }
+
         const FieldRangeVector &_v;
-        vector<int> _i;
+        CompoundRangeCounter _i;
         vector<const BSONElement*> _cmp;
         vector<bool> _inc;
         bool _after;
