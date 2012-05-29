@@ -18,11 +18,11 @@
 
 #pragma once
 
-#include "../pch.h"
-#include "jsobj.h"
-#include "diskloc.h"
-#include "pdfile.h"
-#include "key.h"
+#include "pch.h"
+#include "mongo/db/jsobj.h"
+#include "mongo/db/diskloc.h"
+#include "mongo/db/pdfile.h"
+#include "mongo/db/key.h"
 
 namespace mongo {
 
@@ -242,7 +242,10 @@ namespace mongo {
             int la = loc.a();
             verify( la <= 0xffffff ); // must fit in 3 bytes
             if( la < 0 ) {
-                verify( la == -1 );
+                if ( la != -1 ) {
+                    log() << "btree diskloc isn't negative 1: " << la << endl;
+                    verify ( la == -1 );
+                }
                 la = 0;
                 ofs = OurNullOfs;
             }
@@ -1010,14 +1013,18 @@ namespace mongo {
     class BtreeCursor : public Cursor {
     protected:
         BtreeCursor( NamespaceDetails *_d, int _idxNo, const IndexDetails&, const BSONObj &startKey, const BSONObj &endKey, bool endKeyInclusive, int direction );
-        BtreeCursor( NamespaceDetails *_d, int _idxNo, const IndexDetails& _id, const shared_ptr< FieldRangeVector > &_bounds, int _direction );
+        BtreeCursor( NamespaceDetails *_d, int _idxNo, const IndexDetails& _id,
+                    const shared_ptr< FieldRangeVector > &_bounds, int singleIntervalLimit,
+                    int _direction );
     public:
         virtual ~BtreeCursor();
         /** makes an appropriate subclass depending on the index version */
         static BtreeCursor* make( NamespaceDetails *_d, const IndexDetails&, const BSONObj &startKey, const BSONObj &endKey, bool endKeyInclusive, int direction );
         static BtreeCursor* make( NamespaceDetails *_d, const IndexDetails& _id, const shared_ptr< FieldRangeVector > &_bounds, int _direction );
         static BtreeCursor* make( NamespaceDetails *_d, int _idxNo, const IndexDetails&, const BSONObj &startKey, const BSONObj &endKey, bool endKeyInclusive, int direction );
-        static BtreeCursor* make( NamespaceDetails *_d, int _idxNo, const IndexDetails& _id, const shared_ptr< FieldRangeVector > &_bounds, int _direction );
+        static BtreeCursor* make( NamespaceDetails *_d, int _idxNo, const IndexDetails& _id,
+                                 const shared_ptr< FieldRangeVector > &_bounds,
+                                 int singleIntervalLimit, int _direction );
 
         virtual bool ok() { return !bucket.isNull(); }
         virtual bool advance();

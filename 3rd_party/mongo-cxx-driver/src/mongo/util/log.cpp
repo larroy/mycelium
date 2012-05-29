@@ -43,6 +43,14 @@ namespace mongo {
 
     thread_specific_ptr<Logstream> Logstream::tsp;
 
+    Nullstream& tlog( int level ) {
+        if ( !debug && level > tlogLevel )
+            return nullstream;
+        if ( level > logLevel )
+            return nullstream;
+        return Logstream::get().prolog();
+    }
+
     class LoggingManager {
     public:
         LoggingManager()
@@ -376,6 +384,24 @@ namespace mongo {
         if( p == 0 )
             tsp.reset( p = new Logstream() );
         return *p;
+    }
+
+    /* note: can't use malloc herein - may be in signal handler.
+             logLockless() likely does not comply and should still be fixed todo
+             likewise class string?
+    */
+    void rawOut( const string &s ) {
+        if( s.empty() ) return;
+
+        char buf[64];
+        time_t_to_String( time(0) , buf );
+        /* truncate / don't show the year: */
+        buf[19] = ' ';
+        buf[20] = 0;
+
+        Logstream::logLockless(buf);
+        Logstream::logLockless(s);
+        Logstream::logLockless("\n");
     }
 
 }

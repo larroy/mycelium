@@ -18,22 +18,27 @@
  */
 
 #include "pch.h"
-#include "../bson/oid.h"
-#include "jsobj.h"
-#include "nonce.h"
-#include "../bson/util/atomic_int.h"
-#include "../util/base64.h"
-#include "../util/md5.hpp"
+#include "mongo/db/jsobj.h"
+
 #include <limits>
 #include <cmath>
-#include "../util/unittest.h"
-#include "../util/embedded_builder.h"
-#include "../util/stringutils.h"
-#include "../util/mongoutils/str.h"
-#include "json.h"
-#include "jsobjmanipulator.h"
-#include "../util/optime.h"
+
+#include <boost/lexical_cast.hpp>
 #include <boost/static_assert.hpp>
+
+#include "mongo/bson/oid.h"
+#include "mongo/bson/util/atomic_int.h"
+#include "mongo/db/jsobjmanipulator.h"
+#include "mongo/db/json.h"
+#include "mongo/db/nonce.h"
+#include "mongo/util/base64.h"
+#include "mongo/util/embedded_builder.h"
+#include "mongo/util/md5.hpp"
+#include "mongo/util/mongoutils/str.h"
+#include "mongo/util/optime.h"
+#include "mongo/util/startup_test.h"
+#include "mongo/util/stringutils.h"
+
 
 // make sure our assumptions are valid
 BOOST_STATIC_ASSERT( sizeof(short) == 2 );
@@ -939,7 +944,7 @@ namespace mongo {
     */
 #pragma pack()
 
-    struct BsonUnitTest : public UnitTest {
+    struct BsonUnitTest : public StartupTest {
         void testRegex() {
 
             BSONObjBuilder b;
@@ -1072,7 +1077,7 @@ namespace mongo {
     Labeler::Label LTE( "$lte" );
     Labeler::Label NE( "$ne" );
     Labeler::Label NIN( "$nin" );
-    Labeler::Label SIZE( "$size" );
+    Labeler::Label BSIZE( "$size" );
 
     void BSONObjBuilder::appendMinForType( const StringData& fieldName , int t ) {
         switch ( t ) {
@@ -1280,7 +1285,7 @@ namespace mongo {
             append( fieldName , num );
             return true;
         }
-        catch(bad_lexical_cast &) {
+        catch(boost::bad_lexical_cast &) {
             return false;
         }
     }

@@ -17,12 +17,21 @@
 
 #pragma once
 
-#include "../heapcheck.h"
-#include "threadlocal.h"
-#if defined(_DEBUG)
-#include "mutexdebugger.h"
+#ifdef _WIN32
+# include <concrt.h>
 #endif
+
+#include <boost/noncopyable.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/xtime.hpp>
+
 #include "mongo/util/assert_util.h"
+#include "mongo/util/heapcheck.h"
+#include "mongo/util/concurrency/threadlocal.h"
+
+#if defined(_DEBUG)
+#include "mongo/util/concurrency/mutexdebugger.h"
+#endif
 
 namespace mongo {
 
@@ -71,11 +80,7 @@ namespace mongo {
         public:
             try_lock( mongo::mutex &m , int millis = 0 )
                 : _l( m.boost() , incxtimemillis( millis ) ) ,
-#if BOOST_VERSION >= 103500
                   ok( _l.owns_lock() )
-#else
-                  ok( _l.locked() )
-#endif
             { }
         private:
             boost::timed_mutex::scoped_timed_lock _l;
@@ -122,35 +127,22 @@ namespace mongo {
         On Windows, the implementation below is faster than boost mutex.
     */
 #if defined(_WIN32)
-    class SimpleMutex : boost::noncopyable {
-        CRITICAL_SECTION _cs;
+    class SimpleMutex  {
     public:
-        SimpleMutex(const char *name) { InitializeCriticalSection(&_cs); }
-        ~SimpleMutex() { DeleteCriticalSection(&_cs); }
-
-        void lock() { 
-            EnterCriticalSection(&_cs); 
-#if defined(_DEBUG)
-            verify( _cs.RecursionCount == 1 );
-#endif
-        }
-        void dassertLocked() const { 
-#if defined(_DEBUG)
-            verify( _cs.OwningThread == (HANDLE) GetCurrentThreadId() );
-#endif
-        }
-        void unlock() { 
-            dassertLocked();
-            LeaveCriticalSection(&_cs); 
-        }
-
-        class scoped_lock : boost::noncopyable {
+        SimpleMutex( const char * ) {}
+        void dassertLocked() const { }
+        void lock() { _cs.lock(); }
+        void unlock() { _cs.unlock(); }
+        class scoped_lock {
             SimpleMutex& _m;
         public:
             scoped_lock( SimpleMutex &m ) : _m(m) { _m.lock(); }
             ~scoped_lock() { _m.unlock(); }
             const SimpleMutex& m() const { return _m; }
         };
+
+    private:
+        Concurrency::critical_section _cs;
     };
 #else
     class SimpleMutex : boost::noncopyable {

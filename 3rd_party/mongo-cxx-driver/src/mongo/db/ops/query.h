@@ -24,15 +24,17 @@
 #include "../jsobj.h"
 #include "../diskloc.h"
 #include "../explain.h"
-#include "../queryoptimizer.h"
-#include "../queryoptimizercursor.h"
+#include "mongo/db/projection.h"
 #include "../../s/d_chunk_manager.h"
 
 // struct QueryOptions, QueryResult, QueryResultFlags in:
-#include "../../client/dbclient.h"
 
 namespace mongo {
 
+    class ParsedQuery;
+    class QueryOptimizerCursor;
+    class QueryPlanSummary;
+    
     QueryResult* processGetMore(const char *ns, int ntoreturn, long long cursorid , CurOp& op, int pass, bool& exhaust);
 
     const char * runQuery(Message& m, QueryMessage& q, CurOp& curop, Message &result);
@@ -129,7 +131,7 @@ namespace mongo {
          * results must be sorted or read with a covered index.
          */
         ResponseBuildStrategy( const ParsedQuery &parsedQuery, const shared_ptr<Cursor> &cursor,
-                              BufBuilder &buf, const QueryPlan::Summary &queryPlan );
+                              BufBuilder &buf, const QueryPlanSummary &queryPlan );
         virtual ~ResponseBuildStrategy() {}
         /**
          * Handle the current iterate of the supplied cursor as a (possibly duplicate) match.
@@ -170,7 +172,7 @@ namespace mongo {
     class OrderedBuildStrategy : public ResponseBuildStrategy {
     public:
         OrderedBuildStrategy( const ParsedQuery &parsedQuery, const shared_ptr<Cursor> &cursor,
-                             BufBuilder &buf, const QueryPlan::Summary &queryPlan );
+                             BufBuilder &buf, const QueryPlanSummary &queryPlan );
         virtual bool handleMatch( bool &orderedMatch );
         virtual int bufferedMatches() const { return _bufferedMatches; }
     private:
@@ -186,16 +188,28 @@ namespace mongo {
         ReorderBuildStrategy( const ParsedQuery &parsedQuery,
                              const shared_ptr<Cursor> &cursor,
                              BufBuilder &buf,
-                             const QueryPlan::Summary &queryPlan );
+                             const QueryPlanSummary &queryPlan );
         virtual bool handleMatch( bool &orderedMatch );
         /** Handle a match without performing deduping. */
         void _handleMatchNoDedup();
         virtual int rewriteMatches();
         virtual int bufferedMatches() const { return _bufferedMatches; }
     private:
-        ScanAndOrder *newScanAndOrder( const QueryPlan::Summary &queryPlan ) const;
+        ScanAndOrder *newScanAndOrder( const QueryPlanSummary &queryPlan ) const;
         shared_ptr<ScanAndOrder> _scanAndOrder;
         int _bufferedMatches;
+    };
+
+    /** Helper class for deduping DiskLocs */
+    class DiskLocDupSet {
+    public:
+        /** @return true if dup, otherwise return false and insert. */
+        bool getsetdup( const DiskLoc &loc ) {
+            pair<set<DiskLoc>::iterator, bool> p = _dups.insert(loc);
+            return !p.second;
+        }
+    private:
+        set<DiskLoc> _dups;
     };
 
     /**
@@ -230,7 +244,7 @@ namespace mongo {
          * results must be sorted or read with a covered index.
          */
         QueryResponseBuilder( const ParsedQuery &parsedQuery, const shared_ptr<Cursor> &cursor,
-                             const QueryPlan::Summary &queryPlan, const BSONObj &oldPlan );
+                             const QueryPlanSummary &queryPlan, const BSONObj &oldPlan );
         /** @return true if the current iterate matches and is added. */
         bool addMatch();
         /** Note that a yield occurred. */
@@ -254,9 +268,9 @@ namespace mongo {
     private:
         ShardChunkManagerPtr newChunkManager() const;
         shared_ptr<ExplainRecordingStrategy> newExplainRecordingStrategy
-        ( const QueryPlan::Summary &queryPlan, const BSONObj &oldPlan ) const;
+        ( const QueryPlanSummary &queryPlan, const BSONObj &oldPlan ) const;
         shared_ptr<ResponseBuildStrategy> newResponseBuildStrategy
-        ( const QueryPlan::Summary &queryPlan );
+        ( const QueryPlanSummary &queryPlan );
         bool currentMatches();
         bool chunkMatches();
         const ParsedQuery &_parsedQuery;

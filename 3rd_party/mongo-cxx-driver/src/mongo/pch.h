@@ -21,16 +21,9 @@
 #ifndef MONGO_PCH_H
 #define MONGO_PCH_H
 
-#if defined(MONGO_EXPOSE_MACROS)
-
-# define JS_C_STRINGS_ARE_UTF8
-# undef  SUPPORT_UCP
-# define SUPPORT_UCP
-# undef  SUPPORT_UTF8
-# define SUPPORT_UTF8
-# undef  _CRT_SECURE_NO_WARNINGS
-# define _CRT_SECURE_NO_WARNINGS
-#endif
+// our #define macros must not be active when we include
+// system headers and boost headers
+#include "mongo/client/undef_macros.h"
 
 #if defined(_WIN32)
 // for rand_s() usage:
@@ -38,14 +31,17 @@
 # ifndef NOMINMAX
 #  define NOMINMAX
 # endif
-#define WIN32_LEAN_AND_MEAN
+// tell windows.h not to include a bunch of headers
+// we don't need:
+# define WIN32_LEAN_AND_MEAN
+# include "targetver.h"
 # include <winsock2.h> //this must be included before the first windows.h include
 # include <ws2tcpip.h>
 # include <wspiapi.h>
 # include <windows.h>
 #endif
 
-#if defined(__linux__) && defined(MONGO_EXPOSE_MACROS)
+#if defined(__linux__)
 // glibc's optimized versions are better than g++ builtins
 # define __builtin_strcmp strcmp
 # define __builtin_strlen strlen
@@ -55,7 +51,6 @@
 # define __builtin_memset memset
 # define __builtin_memmove memmove
 #endif
-
 
 #include <ctime>
 #include <cstring>
@@ -69,60 +64,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include "targetver.h"
+
 #include "time.h"
 #include "string.h"
 #include "limits.h"
 
-#define BOOST_FILESYSTEM_VERSION 2
-#include <boost/lexical_cast.hpp>
+#define BOOST_FILESYSTEM_VERSION 3
 #include <boost/shared_ptr.hpp>
 #include <boost/smart_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
-#include <boost/thread/tss.hpp>
-#include <boost/detail/endian.hpp>
 #include <boost/version.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/condition.hpp>
-#include <boost/thread/recursive_mutex.hpp>
-#include <boost/thread/xtime.hpp>
+
+#include "mongo/client/redef_macros.h"
+
+#include "mongo/util/exit_code.h"
 
 namespace mongo {
 
     using namespace std;
     using boost::shared_ptr;
-
-#if defined(_DEBUG)
-    const bool debug=true;
-#else
-    const bool debug=false;
-#endif
-
-    // pdfile versions
-    const int PDFILE_VERSION = 4;
-    const int PDFILE_VERSION_MINOR = 5;
-
-    enum ExitCode {
-        EXIT_CLEAN = 0 ,
-        EXIT_BADOPTIONS = 2 ,
-        EXIT_REPLICATION_ERROR = 3 ,
-        EXIT_NEED_UPGRADE = 4 ,
-        EXIT_SHARDING_ERROR = 5 ,
-        EXIT_KILL = 12 ,
-        EXIT_ABRUPT = 14 ,
-        EXIT_NTSERVICE_ERROR = 20 ,
-        EXIT_JAVA = 21 ,
-        EXIT_OOM_MALLOC = 42 ,
-        EXIT_OOM_REALLOC = 43 ,
-        EXIT_FS = 45 ,
-        EXIT_CLOCK_SKEW = 47 ,
-        EXIT_NET_ERROR = 48 ,
-        EXIT_WINDOWS_SERVICE_STOP = 49 ,
-        EXIT_POSSIBLE_CORRUPTION = 60 , // this means we detected a possible corruption situation, like a buf overflow
-        EXIT_UNCAUGHT = 100 , // top level exception that wasn't caught
-        EXIT_TEST = 101
-    };
 
     void dbexit( ExitCode returnCode, const char *whyMsg = "", bool tryToGetLock = false);
 
@@ -134,31 +95,13 @@ namespace mongo {
     void exit( ExitCode returnCode );
     bool inShutdown();
 
-    void asserted(const char *msg, const char *file, unsigned line);
 }
 
 
-#include "util/assert_util.h"
-#include "util/debug_util.h"
-#include "util/goodies.h"
-#include "util/log.h"
-#include "util/allocator.h"
-
-namespace mongo {
-
-    void sayDbContext(const char *msg = 0);
-    void rawOut( const string &s );
-
-    typedef char _TCHAR;
-
-    using boost::uint32_t;
-    using boost::uint64_t;
-
-    /** called by mongos, mongod, test. do not call from clients and such. 
-        invoked before about everything except global var construction.
-     */
-    void doPreServerStartupInits();
-
-} // namespace mongo
+#include "mongo/util/assert_util.h"
+#include "mongo/util/debug_util.h"
+#include "mongo/util/goodies.h"
+#include "mongo/util/allocator.h"
+#include "mongo/util/log.h"
 
 #endif // MONGO_PCH_H
