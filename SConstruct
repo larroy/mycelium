@@ -87,7 +87,8 @@ includes = [
     '.',
     Dir('src/common').get_abspath(),
     Dir('src/crawler').get_abspath(),
-    Dir('src/html_lexer').get_abspath()
+    Dir('src/html_lexer').get_abspath(),
+    Dir('src/jsoncpp_dist').get_abspath()
 ]
 
 
@@ -242,6 +243,8 @@ else:
 #VariantDir('build', '.')
 
 env['common_sources'] = utils.findall('src/common', '*.cc', 1)
+env['common_sources'].append('jsoncpp_dist/jsoncpp.cpp')
+
 env['crawler_sources'] = utils.findall('src/crawler', '*.cc', 1)
 env['unit_tests_sources'] = utils.findall('src/unit_tests', '*.cc', 1)
 env['local_indexer_sources'] = utils.findall('src/local_indexer', '*.cc', 1)
