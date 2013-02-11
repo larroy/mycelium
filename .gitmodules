@@ -9,4 +9,4 @@
 	url = git://github.com/mongodb/mongo.git
 [submodule "3rd_party/minimongo"]
 	path = 3rd_party/minimongo
-	url = git@github.com:larroy/minimongo.git
+	url = git://github.com/larroy/minimongo.git
