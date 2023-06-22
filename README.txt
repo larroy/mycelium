@@ -1,7 +1,7 @@
 The Mycelium Information retrieval system
 =========================================
 
-Check the latest up-to-date user documentation in http://pedro.larroy.com/mycelium/sphinx/
+Check the latest up-to-date user documentation at http://pedro.larroy.com/mycelium/sphinx/
 
 For the impatient
 -----------------
